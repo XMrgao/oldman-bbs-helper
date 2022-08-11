@@ -185,6 +185,7 @@
 						}
 						hideBlackListUserContent()
 						$("#user-operate-menu").hide();
+						Utils.saveConfig(settingObject.blacklist.id)
 					}
 					let operateMenu = $("#user-operate-menu")
 					operateMenu.empty()
@@ -759,22 +760,41 @@
 			},
 			// 功能生效的逻辑代码
 			doAction: function() {
-				var linkpattern = /https?:\/\/pan\.baidu\.com\/s\/[a-zA-Z0-9?=]*/
-				var codepattern = /[a-zA-Z0-9]{4}/
+				var linkpattern = /https?:\/\/pan\.baidu\.com\/s\/[a-zA-Z0-9?=_-]*/
 				$(":contains(https://pan.baidu.com/s/)").filter(function() {
 					return $(this).children().length === 0
 				}).each(function() {
 					let parent = $(this).parent()
 					let text = parent.text()
 					let url = linkpattern.exec(text)[0]
+					let code = ""
+					let finalUrl = url
 
 					if (url.indexOf("pwd=") == -1) {
-						text = text.replace(url, "")
-						let code = codepattern.exec[text][0]
-						url = url + "?pwd=" + code
+						var codepattern = new RegExp(url + ".*(提取码：)?([a-zA-Z0-9]{4})");
+						let match = codepattern.exec(text)
+						if(match.length == 0){
+							// 没有找到本链接对应的提取码，略过处理下一个
+							return
+						}
+						code = match[0]
+						code = code.replace(url,"")
+						code = code.replace("提取码：","")
+						code = code.trim()
+						finalUrl = finalUrl + "?pwd=" + code
 					}
-					parent.empty()
-					parent.html("<a class='baiduYunLink' href='" + url + "'>" + url + "</a> <i url='" + url + "' style='font-size: 25px;' class='copy-link fa fa-copy'></i><span style='margin-left:5px;display:none;color:red;'>链接已经复制到剪贴板</span>")
+					let html = parent.html()
+					html = html.replace(new RegExp("(链接：)?"+url),"")
+					html = html.replace(new RegExp("(提取码：)?"+code),"")
+					let result = Utils.createDivWithTitle("老男人助手解析百度云链接结果",'<a class="baiduYunLink" href="' + finalUrl + '">' + finalUrl + '</a> <i url="' + finalUrl + '" style="font-size: 25px;" class="copy-link fa fa-copy"></i><span style="margin-left:5px;display:none;color:red;">链接已经复制到剪贴板</span>',false,"width:100%;border: 2px solid #d8caaf;")
+					html += result
+					parent.html(html)
+
+					$(".alert.alert-success").each(function(){
+						if($(this).text().trim() == "" && !Utils.hasElement("img",this)){
+							$(this).hide()
+						}
+					})
 
 					$(".copy-link").click(function() {
 						let url = $(this).attr("url")
@@ -1039,15 +1059,7 @@
                         justify-content:center;
                         align-items:center;
                     }
-                    .baiduYunLink {
-                      border: 2px solid #ffffff;
-                      border-radius: 4px;
-                      border-style: dashed;
-                      padding-left:5px;
-                      padding-right:5px;
-                      padding-bottom:3px;
-                      padding-top:3px;
-                    }
+                    
                 </style>
             `,
 		//设置按钮的html定义
@@ -1111,21 +1123,27 @@
 			if (!functionKey || !settingObject[functionKey]) {
 				return
 			}
-			var config = {}
 			let functionObject = settingObject[functionKey]
-			for (let configName of Object.keys(functionObject.config)) {
-				let val = null
-				//功能开关统一处理
-				if (configName == "enable") {
-					val = document.getElementById('switch-' + functionKey).checked
-				} else {
-					//拿到属性key的映射对象
-					let mapObject = functionObject.configKeyElementMaps[configName]
-					// 如果映射对象有getVal函数，那么就调用getVal函数取得值，如果没有，就默认调用 getElementVal 函数取值
-					val = mapObject.getVal ? mapObject.getVal() : this.getElementVal(mapObject.element)
+			var config = {}
+			// 如果设置页面处于显示状态，需要从设置页面读取值更新内存，最后再持久化存储
+			// 如果设置页面没有显示，略过从设置页面读取值更新内存这一步，直接将内存配置持久化存储
+			if(this.isSettingPanelShow()){
+				for (let configName of Object.keys(functionObject.config)) {
+					let val = null
+					//功能开关统一处理
+					if (configName == "enable") {
+						val = document.getElementById('switch-' + functionKey).checked
+					} else {
+						//拿到属性key的映射对象
+						let mapObject = functionObject.configKeyElementMaps[configName]
+						// 如果映射对象有getVal函数，那么就调用getVal函数取得值，如果没有，就默认调用 getElementVal 函数取值
+						val = mapObject.getVal ? mapObject.getVal() : this.getElementVal(mapObject.element)
+					}
+					functionObject.config[configName] = val
+					config[configName] = val
 				}
-				functionObject.config[configName] = val
-				config[configName] = val
+			}else{
+				config = functionObject.config
 			}
 			//将window.Config对象数据保存到localStorage
 			localStorage.setItem(this.configPrefix + "__" + functionKey, JSON.stringify(config));
@@ -1142,7 +1160,9 @@
 				}
 				try {
 					let cobj = JSON.parse(c)
-					item.config = cobj
+					for (let key of Object.keys(cobj)) {
+						item.config[key] = cobj[key]
+					}
 				} catch (e) {
 					console.log("加载[" + item.title + "]功能配置出错:json解析错误！将使用默认配置。" + e.toString())
 				}
@@ -1157,6 +1177,9 @@
 			}
 			let object = settingObject[window.currentFunctionKey]
 			return object ? object : null;
+		},
+		isSettingPanelShow:function(){
+			return $("#setting-panel").css("display") != 'none'
 		},
 		reloadPage: function(functionKey) {
 			if (!functionKey || !settingObject[functionKey]) {
@@ -1270,9 +1293,9 @@
 				}
 			}
 		},
-		createDivWithTitle: function(title, contentHtml, jqueryObject = false) {
+		createDivWithTitle: function(title, contentHtml, jqueryObject = false,styles="") {
 			let html = `
-                    <div class="setting-item-section">
+                    <div class="setting-item-section" style="${styles}">
                         <h1 class="setting-item-section-title"><span>${title}</span></h1>
                         <div class="section-content">
                             ${contentHtml}
