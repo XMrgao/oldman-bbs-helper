@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         老男人助手
 // @namespace    http://tampermonkey.net/
-// @version      0.8
+// @version      0.8.1
 // @description  适用于老男人游戏论坛:https://bbs.oldmanemu.net/ 的小工具
 // @author       rock128
 // @match        https://bbs.oldmanemu.net/*
@@ -773,30 +773,30 @@
 					if (url.indexOf("pwd=") == -1) {
 						var codepattern = new RegExp(url + ".*(提取码.*)?([a-zA-Z0-9]{4})");
 						let match = codepattern.exec(text)
-						if(!match || match.length == 0){
+						if (!match || match.length == 0) {
 							// 没有找到本链接对应的提取码，略过处理下一个
 							return
 						}
 						code = match[0]
-						code = code.replace(url,"")
+						code = code.replace(url, "")
 						code = /[a-zA-Z0-9]{4}/.exec(code)[0]
 						code = code.trim()
 						finalUrl = finalUrl + "?pwd=" + code
-					}else{
-						code = /pwd=[a-zA-Z0-9]{4}/.exec(url)[0].replace("pwd=","")
+					} else {
+						code = /pwd=[a-zA-Z0-9]{4}/.exec(url)[0].replace("pwd=", "")
 					}
 					let html = parent.html()
-					html = html.replace(new RegExp("链接[：:]?"),"")
-					html = html.replace(new RegExp("提取码[:：]?"),"")
-					html = html.replace(url,"")
-					html = html.replace(code,"")
-					html = html.replace(new RegExp("--来自百度网盘超级会员V\\d的分享"),"")
+					html = html.replace(new RegExp("链接[：:]?"), "")
+					html = html.replace(new RegExp("提取码[:：]?"), "")
+					html = html.replace(url, "")
+					html = html.replace(code, "")
+					html = html.replace(new RegExp("--来自百度网盘超级会员V\\d的分享"), "")
 					parent.html(html)
 
-					$('.message.break-all').eq(0).append(Utils.createDivWithTitle("老男人助手解析百度云链接结果",'<a class="baiduYunLink" target="_blank" href="' + finalUrl + '">' + finalUrl + '</a> <i url="' + finalUrl + '" style="font-size: 25px;" class="copy-link fa fa-copy"></i><span style="margin-left:5px;display:none;color:red;">链接已经复制到剪贴板</span>',true,"width:100%;border: 2px solid orange;border-style: dashed;","background-color:#f8f9fa !important;"))
+					$('.message.break-all').eq(0).append(Utils.createDivWithTitle("老男人助手解析百度云链接结果", '<a class="baiduYunLink" target="_blank" href="' + finalUrl + '">' + finalUrl + '</a> <i url="' + finalUrl + '" style="font-size: 25px;" class="copy-link fa fa-copy"></i><span style="margin-left:5px;display:none;color:red;">链接已经复制到剪贴板</span>', true, "width:100%;border: 2px solid orange;border-style: dashed;", "background-color:#f8f9fa !important;"))
 
-					$(".alert.alert-success").each(function(){
-						if($(this).text().trim() == "" && !Utils.hasElement("img",this)){
+					$(".alert.alert-success").each(function() {
+						if ($(this).text().trim() == "" && !Utils.hasElement("img", this)) {
 							$(this).hide()
 						}
 					})
@@ -817,6 +817,50 @@
 			// 功能配置的html代码
 			contentHtml: function() {
 				return Utils.createMsgDiv("<h3>把百度云链接和提取码组合成一个可直接访问的链接，免去手动输入提取码</h3>")
+			}
+		},
+		quickReply: {
+			// 和所属对象属性名保持一致
+			id: "quickReply",
+			// 显示在界面上的标题
+			title: "快速回复",
+			// 配置变化时是否需要重新加载页面
+			needReload: false,
+			// 所有用到的配置全部写在这里，config对象会持久化
+			// 除 enable 属性外，其他属性要在 configKeyElementMaps 中定义一个同名属性来映射页面元素
+			config: {
+				enable: false
+			},
+			// 该功能用到的 config 属性名和 元素class/id的映射
+			configKeyElementMaps: {},
+			// 功能生效的前提条件检查
+			matchCondition: function() {
+				return Utils.isMatchPageCategory("my-notice") && !Utils.hasElement(".quickReplyMark")
+			},
+			// 功能生效的逻辑代码
+			doAction: function() {
+				$(".single-comment").each(function(){
+					let href = $(this).find("a").eq(0).attr("href")
+					let ret = Utils.parsePageIdAndQuoteId(href)
+					if(!ret){
+						return
+					}
+					let button = $('<div class="quick-reply-button" pageId="'+ret.pageId+'" quoteId="'+ret.quoteId+'">回复</div>')
+					button.click(function(){
+						let pageId = $(this).attr("pageId")
+						let quoteId = $(this).attr("quoteId")
+						let msg = prompt("输入回复内容")
+						if(msg && msg.trim().length > 0){
+							Utils.quickReply(pageId,quoteId,msg)
+						}
+					})
+					$(this).parent().append(button)
+				})
+				$("body").addClass("quickReplyMark")
+			},
+			// 功能配置的html代码
+			contentHtml: function() {
+				return Utils.createMsgDiv("<h3></h3>")
 			}
 		}
 	}
@@ -1066,7 +1110,17 @@
                         justify-content:center;
                         align-items:center;
                     }
-                    
+                    .quick-reply-button {
+                    	width:40px;
+                    	height:20px;
+                    	border-radius:5px;
+                    	color:white;
+                    	background-color:#177f2e;
+                    	display:flex;
+                    	justify-content:center;
+                    	align-items:center;
+                    	font-size: 10px;
+                    }                    
                 </style>
             `,
 		//设置按钮的html定义
@@ -1115,9 +1169,9 @@
 					Utils.reloadPage(window.currentFunctionKey)
 				}
 			}
-      $("#setting_btn").click(function(){
-        window.openOldManHelper()
-      })
+			$("#setting_btn").click(function() {
+				window.openOldManHelper()
+			})
 			$('body').mousemove(function(e) {
 				e = e || window.event;
 				window.__xx = e.pageX || e.clientX + document.body.scroolLeft;
@@ -1134,7 +1188,7 @@
 			var config = {}
 			// 如果设置页面处于显示状态，需要从设置页面读取值更新内存，最后再持久化存储
 			// 如果设置页面没有显示，略过从设置页面读取值更新内存这一步，直接将内存配置持久化存储
-			if(this.isSettingPanelShow()){
+			if (this.isSettingPanelShow()) {
 				for (let configName of Object.keys(functionObject.config)) {
 					let val = null
 					//功能开关统一处理
@@ -1149,7 +1203,7 @@
 					functionObject.config[configName] = val
 					config[configName] = val
 				}
-			}else{
+			} else {
 				config = functionObject.config
 			}
 			//将window.Config对象数据保存到localStorage
@@ -1175,6 +1229,21 @@
 				}
 			}
 		},
+		parsePageIdAndQuoteId:function(href){
+			var tmp = href.replace("thread-","")
+			tmp = tmp.substring(0,tmp.lastIndexOf("."))
+			return {
+				pageId:tmp,
+				quoteId:href.split("#")[1]
+			}
+		},
+		quickReply: function(pageId,quoteId,content) {
+			var form = this.createQuickReplyForm(pageId,quoteId,content,true)
+			form.trigger('submit');
+		},
+		getCurrentPageThreadId:function(){
+			return window.location.href.split("-")[1].replace(".htm","")
+		},
 		hasElement: function(el, root = null) {
 			return root ? $(root).find(el).length > 0 : $(el).length > 0
 		},
@@ -1185,7 +1254,7 @@
 			let object = settingObject[window.currentFunctionKey]
 			return object ? object : null;
 		},
-		isSettingPanelShow:function(){
+		isSettingPanelShow: function() {
 			return $("#setting-panel").css("display") != 'none'
 		},
 		reloadPage: function(functionKey) {
@@ -1274,6 +1343,17 @@
                 `
 			return jqueryObject ? $(html) : html
 		},
+		createQuickReplyForm: function(pageId,quoteId,content,jqueryObject = false) {
+			let html = `
+                    <form style="display:none;" action="post-create-${pageId}-1.htm" method="post"> 
+					    <input type="hidden" name="doctype" value="1">
+					    <input type="hidden" name="return_html" value="1">
+					    <input type="hidden" name="quotepid" value="${quoteId}">    
+					    <textarea name="message">${content}</textarea>
+					</form>
+                `
+			return jqueryObject ? $(html) : html
+		},
 		setCurrentContentHtml: function(functionObject, ifFnIsNullUseDefault = true) {
 			$(".content").html(functionObject && functionObject.contentHtml ? functionObject.contentHtml() : ifFnIsNullUseDefault ? this.createDefaultContentHtml() : "")
 			Utils.loadJSColor()
@@ -1300,7 +1380,7 @@
 				}
 			}
 		},
-		createDivWithTitle: function(title, contentHtml, jqueryObject = false,styles="",titleStyles="") {
+		createDivWithTitle: function(title, contentHtml, jqueryObject = false, styles = "", titleStyles = "") {
 			let html = `
                     <div class="setting-item-section" style="${styles}">
                         <h1 class="setting-item-section-title"><span style="${titleStyles}">${title}</span></h1>
