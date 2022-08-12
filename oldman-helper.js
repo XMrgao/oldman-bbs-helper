@@ -1313,7 +1313,9 @@
 		},
 		createDefaultContentHtml: function(jqueryObject = false) {
 			let html = `
-                    <h1>theHelper</h1>
+                    <span style="font-size:30px;">老男人助手</span><span style="font-size:15px;">by rock</span>   </br>                 
+                    <p>有任何bug反馈或者功能建议，请在论坛回复<a href="https://bbs.oldmanemu.net/thread-13819.htm">我的帖子</a>，或者发送邮件给我 1099607871@qq.com</p>
+                    <p>感谢使用</p>
                 `
 			return jqueryObject ? $(html) : html
 		},
