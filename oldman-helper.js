@@ -756,7 +756,7 @@
 			configKeyElementMaps: {},
 			// 功能生效的前提条件检查
 			matchCondition: function() {
-				return Utils.isMatchPageCategory("thread")
+				return Utils.isMatchPageCategory("thread") && !Utils.hasElement(".parseBaiduYunLinkMark")
 			},
 			// 功能生效的逻辑代码
 			doAction: function() {
@@ -771,24 +771,29 @@
 					let finalUrl = url
 
 					if (url.indexOf("pwd=") == -1) {
-						var codepattern = new RegExp(url + ".*(提取码：)?([a-zA-Z0-9]{4})");
+						var codepattern = new RegExp(url + ".*(提取码.*)?([a-zA-Z0-9]{4})");
 						let match = codepattern.exec(text)
-						if(match.length == 0){
+						if(!match || match.length == 0){
 							// 没有找到本链接对应的提取码，略过处理下一个
 							return
 						}
 						code = match[0]
 						code = code.replace(url,"")
-						code = code.replace("提取码：","")
+						code = /[a-zA-Z0-9]{4}/.exec(code)[0]
 						code = code.trim()
 						finalUrl = finalUrl + "?pwd=" + code
+					}else{
+						code = /pwd=[a-zA-Z0-9]{4}/.exec(url)[0].replace("pwd=","")
 					}
 					let html = parent.html()
-					html = html.replace(new RegExp("(链接：)?"+url),"")
-					html = html.replace(new RegExp("(提取码：)?"+code),"")
-					let result = Utils.createDivWithTitle("老男人助手解析百度云链接结果",'<a class="baiduYunLink" href="' + finalUrl + '">' + finalUrl + '</a> <i url="' + finalUrl + '" style="font-size: 25px;" class="copy-link fa fa-copy"></i><span style="margin-left:5px;display:none;color:red;">链接已经复制到剪贴板</span>',false,"width:100%;border: 2px solid #d8caaf;")
-					html += result
+					html = html.replace(new RegExp("链接[：:]?"),"")
+					html = html.replace(new RegExp("提取码[:：]?"),"")
+					html = html.replace(url,"")
+					html = html.replace(code,"")
+					html = html.replace(new RegExp("--来自百度网盘超级会员V\\d的分享"),"")
 					parent.html(html)
+
+					$('.message.break-all').eq(0).append(Utils.createDivWithTitle("老男人助手解析百度云链接结果",'<a class="baiduYunLink" target="_blank" href="' + finalUrl + '">' + finalUrl + '</a> <i url="' + finalUrl + '" style="font-size: 25px;" class="copy-link fa fa-copy"></i><span style="margin-left:5px;display:none;color:red;">链接已经复制到剪贴板</span>',true,"width:100%;border: 2px solid orange;border-style: dashed;","background-color:#f8f9fa !important;"))
 
 					$(".alert.alert-success").each(function(){
 						if($(this).text().trim() == "" && !Utils.hasElement("img",this)){
@@ -806,6 +811,8 @@
 						}, 500)
 					})
 				})
+
+				$("body").addClass("parseBaiduYunLinkMark")
 			},
 			// 功能配置的html代码
 			contentHtml: function() {
@@ -1293,10 +1300,10 @@
 				}
 			}
 		},
-		createDivWithTitle: function(title, contentHtml, jqueryObject = false,styles="") {
+		createDivWithTitle: function(title, contentHtml, jqueryObject = false,styles="",titleStyles="") {
 			let html = `
                     <div class="setting-item-section" style="${styles}">
-                        <h1 class="setting-item-section-title"><span>${title}</span></h1>
+                        <h1 class="setting-item-section-title"><span style="${titleStyles}">${title}</span></h1>
                         <div class="section-content">
                             ${contentHtml}
                         </div>
