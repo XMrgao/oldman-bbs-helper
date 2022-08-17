@@ -835,27 +835,124 @@
 			configKeyElementMaps: {},
 			// 功能生效的前提条件检查
 			matchCondition: function() {
-				return Utils.isMatchPageCategory("my-notice") && !Utils.hasElement(".quickReplyMark")
+				return !Utils.hasElement(".quickReplyMark")
 			},
 			// 功能生效的逻辑代码
 			doAction: function() {
-				$(".single-comment").each(function(){
+				$(".single-comment").each(function() {
 					let href = $(this).find("a").eq(0).attr("href")
 					let ret = Utils.parsePageIdAndQuoteId(href)
-					if(!ret){
+					if (!ret) {
 						return
 					}
-					let button = $('<div class="quick-reply-button" pageId="'+ret.pageId+'" quoteId="'+ret.quoteId+'">回复</div>')
-					button.click(function(){
+					let notice = $(this).parent().parent().parent()
+					let button = $('<div class="quick-reply-button" pageId="' + ret.pageId + '" quoteId="' + ret.quoteId + '">回复</div>')
+					button.click(function() {
 						let pageId = $(this).attr("pageId")
 						let quoteId = $(this).attr("quoteId")
 						let msg = prompt("输入回复内容")
-						if(msg && msg.trim().length > 0){
-							Utils.quickReply(pageId,quoteId,msg)
+						if (msg && msg.trim().length > 0) {
+							Utils.quickReply(pageId, quoteId, msg)
+							notice.addClass("isread")
+							let readBtn = notice.find('.readbtn');
+							readbtn.trigger("click")
+							readBtn.removeClass('readbtn').text("已读");
 						}
 					})
 					$(this).parent().append(button)
 				})
+
+
+				if (Utils.hasElement("#nav-usernotice-unread-notices")) {
+					try {
+						let count = parseInt($("#nav-usernotice-unread-notices").text())
+						if (count > 0) {
+							let p = $("#nav-usernotice-unread-notices").parent().parent()
+							var openQuickReplyTimeout = null;
+							p.mouseenter(function() {
+								if ($(".batch-reply-div").css("display") != 'none') {
+									return
+								}
+								openQuickReplyTimeout = setTimeout(function() {
+									$.ajax({
+										type: "get",
+										url: "https://bbs.oldmanemu.net/my-notice.htm",
+										dataType: "html",
+										async: true,
+										success: function(html) {
+											let listHtml = ""
+											$(html).find(".readbtn").each(function() {
+												let div = $(this).parent().parent().parent()
+												let threadName = div.find(".comment-info").text()
+												if (threadName.indexOf("评论") == -1) {
+													return
+												}
+												let replyObject = {}
+												replyObject.threadName = threadName
+												replyObject.username = div.find(".username").text()
+												replyObject.time = div.find(".username").next().text()
+												replyObject.replyInfo = div.find(".single-comment").text()
+												let ret = Utils.parsePageIdAndQuoteId(div.find(".single-comment").find("a").eq(0).attr("href"))
+												replyObject.pageId = ret.pageId
+												replyObject.quoteId = ret.quoteId
+												replyObject.nid = $(this).parent().parent().parent().parent().attr("data-nid")
+
+												listHtml += Utils.createReplyItem(replyObject)
+											})
+											let hasContent = listHtml.length > 0
+
+											let batchReplyDiv = $(".batch-reply-div")
+											let batchReplyConetent = $(".batch-reply-content")
+											batchReplyConetent.empty()
+											batchReplyConetent.html(listHtml)
+
+											if (hasContent) {
+												$(".reply-item").eq(0).css("margin-top", "20px")
+											}
+
+											batchReplyDiv.css("position", "absolute");
+											batchReplyDiv.css("top", p.offset().top + 45);
+											batchReplyDiv.css("left", p.offset().left - 135 + (p.outerWidth(true) / 2));
+											batchReplyDiv.show(100, function() {
+												batchReplyConetent.focus();
+											});
+
+											let ok = $('<div class="quick-reply-button">回复</div>')
+											let cancel = $('<div class="quick-reply-button">取消</div>')
+											cancel.click(function() {
+												batchReplyDiv.hide(100);
+											})
+											ok.click(function() {
+												$(".reply-item").each(function() {
+													let pageId = $(this).attr("pageId")
+													let quoteId = $(this).attr("quoteId")
+													let nid = $(this).attr("nid")
+													let msg = $(this).find("textarea").val()
+													if (msg && msg.trim().length > 0) {
+														Utils.quickReply(pageId, quoteId, msg)
+														var postdata = {
+															act: 'readone',
+															nid: nid
+														};
+														$.xpost(xn.url('my-notice'), postdata, function(code, message) {});
+													}
+												})
+												batchReplyDiv.hide()
+											})
+											batchReplyConetent.append($("<div id='reply-button-div' style='width:100%;display: flex;justify-content: space-evenly;align-items: center;'></div>"))
+											$("#reply-button-div").append(ok)
+											$("#reply-button-div").append(cancel)
+										}
+									});
+								}, 1000)
+							})
+							p.mouseleave(function() {
+								openQuickReplyTimeout && clearTimeout(openQuickReplyTimeout)
+							})
+						}
+					} catch (e) {}
+				}
+
 				$("body").addClass("quickReplyMark")
 			},
 			// 功能配置的html代码
@@ -1120,7 +1217,53 @@
                     	justify-content:center;
                     	align-items:center;
                     	font-size: 10px;
-                    }                    
+                    }
+                    .batch-reply-div{
+				        width: 270px;
+				        height: 300px;      
+				        border:3px solid orange;
+				        border-radius: 16px;
+				        position: relative;
+				        padding: 10px;
+				        display: none;
+				        background-color: white;
+				    }
+				    .batch-reply-content {
+				        height: 100%;
+				        overflow-y:auto;  
+				    }
+				    .batch-reply-content::-webkit-scrollbar {
+                        display: none;
+                    }
+				    .batch-reply-div::before{
+				        content: '';
+				        width: 0;
+				        height: 0;
+				        border: 20px solid;
+				        position: absolute;
+				        top: -43px;
+				        left: 115px;
+				        border-color: transparent transparent orange;
+				    }
+				    .batch-reply-div::after{
+				        content: '';
+				        width: 0;
+				        height: 0;
+				        border: 20px solid;
+				        position: absolute;
+				        top: -40px;
+				        left: 115px;
+				        border-color:  transparent transparent #fff;
+				    }
+				    .reply-item {
+				        width: 100%;
+				        font-size: 10px;
+				    }
+				    .batch-reply-textarea {
+				        width: 90%;
+				        height: 50px;
+				        resize: none;
+				    }                  
                 </style>
             `,
 		//设置按钮的html定义
@@ -1131,9 +1274,20 @@
                </svg>
               </div> 
               <div id="user-operate-menu"></div>
+
+              <div class="batch-reply-div">
+		        <div class="batch-reply-content">
+		        </div>
+		      </div>
+
+		      <iframe name="hideIframe" style="display:none;"></iframe>
             `,
 		// 插件初始化
 		init: function() {
+			var headHTML = document.getElementsByTagName('head')[0].innerHTML;
+			headHTML = '<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">' + headHTML;
+			document.getElementsByTagName('head')[0].innerHTML = headHTML;
+
 			//加载配置
 			this.loadConfig()
 			//创建设置按钮以及加载css
@@ -1229,20 +1383,26 @@
 				}
 			}
 		},
-		parsePageIdAndQuoteId:function(href){
-			var tmp = href.replace("thread-","")
-			tmp = tmp.substring(0,tmp.lastIndexOf("."))
+		parsePageIdAndQuoteId: function(href) {
+			var tmp = href.replace("thread-", "")
+			tmp = tmp.substring(0, tmp.lastIndexOf("."))
 			return {
-				pageId:tmp,
-				quoteId:href.split("#")[1]
+				pageId: tmp,
+				quoteId: href.split("#")[1]
 			}
 		},
-		quickReply: function(pageId,quoteId,content) {
-			var form = this.createQuickReplyForm(pageId,quoteId,content,true)
-			form.trigger('submit');
+		quickReply: function(pageId, quoteId, content) {
+			try {
+				var form = this.createQuickReplyForm(pageId, quoteId, content, true)
+				$("body").append(form);
+				form.trigger('submit');
+				form.remove();
+			} catch (e) {
+				console.log(e)
+			}
 		},
-		getCurrentPageThreadId:function(){
-			return window.location.href.split("-")[1].replace(".htm","")
+		getCurrentPageThreadId: function() {
+			return window.location.href.split("-")[1].replace(".htm", "")
 		},
 		hasElement: function(el, root = null) {
 			return root ? $(root).find(el).length > 0 : $(el).length > 0
@@ -1343,9 +1503,9 @@
                 `
 			return jqueryObject ? $(html) : html
 		},
-		createQuickReplyForm: function(pageId,quoteId,content,jqueryObject = false) {
+		createQuickReplyForm: function(pageId, quoteId, content, jqueryObject = false) {
 			let html = `
-                    <form style="display:none;" action="post-create-${pageId}-1.htm" method="post"> 
+                    <form style="display:none;" action="post-create-${pageId}-1.htm" method="post" target="hideIframe"> 
 					    <input type="hidden" name="doctype" value="1">
 					    <input type="hidden" name="return_html" value="1">
 					    <input type="hidden" name="quotepid" value="${quoteId}">    
@@ -1410,6 +1570,14 @@
                     <div class="msg-div">
                         ${msgHtml}
                     <div>
+                `
+			return jqueryObject ? $(html) : html
+		},
+		createReplyItem: function(infoObject, jqueryObject = false) {
+			let html = `
+                    <div class="reply-item" pageId="${infoObject.pageId}" quoteId="${infoObject.quoteId}" nid="${infoObject.nid}">
+                    ${this.createDivWithTitle(infoObject.username,'<div>'+infoObject.time+' '+infoObject.threadName+' : '+infoObject.replyInfo+'</div><textarea class="batch-reply-textarea" placeholder="留空不回复"></textarea>',false,"width:240px;border: 2px solid gray;border-style:dashed;","background-color: white !important;")}
+		            </div>
                 `
 			return jqueryObject ? $(html) : html
 		}
