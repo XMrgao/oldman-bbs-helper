@@ -5,6 +5,7 @@
 // @description  适用于老男人游戏论坛:https://bbs.oldmanemu.net/ 的小工具
 // @author       rock128
 // @match        https://bbs.oldmanemu.net/*
+// @match        https://testbbs.com/*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
@@ -829,16 +830,22 @@
 			// 所有用到的配置全部写在这里，config对象会持久化
 			// 除 enable 属性外，其他属性要在 configKeyElementMaps 中定义一个同名属性来映射页面元素
 			config: {
-				enable: false
+				enable: false,
+				batchInterval: 1000
 			},
 			// 该功能用到的 config 属性名和 元素class/id的映射
-			configKeyElementMaps: {},
+			configKeyElementMaps: {
+				batchInterval: {
+					element: "#batchInterval-input"
+				}
+			},
 			// 功能生效的前提条件检查
 			matchCondition: function() {
 				return !Utils.hasElement(".quickReplyMark")
 			},
 			// 功能生效的逻辑代码
 			doAction: function() {
+				let batchInterval = this.config.batchInterval
 				$(".single-comment").each(function() {
 					let href = $(this).find("a").eq(0).attr("href")
 					let ret = Utils.parsePageIdAndQuoteId(href)
@@ -855,13 +862,14 @@
 							Utils.quickReply(pageId, quoteId, msg)
 							notice.addClass("isread")
 							let readBtn = notice.find('.readbtn');
-							readbtn.trigger("click")
-							readBtn.removeClass('readbtn').text("已读");
+							if (readBtn && readBtn.length > 0) {
+								readBtn.trigger("click")
+								readBtn.removeClass('readbtn').text("已读");
+							}
 						}
 					})
 					$(this).parent().append(button)
 				})
-
 
 				if (Utils.hasElement("#nav-usernotice-unread-notices")) {
 					try {
@@ -874,76 +882,151 @@
 									return
 								}
 								openQuickReplyTimeout = setTimeout(function() {
-									$.ajax({
-										type: "get",
-										url: "https://bbs.oldmanemu.net/my-notice.htm",
-										dataType: "html",
-										async: true,
-										success: function(html) {
-											let listHtml = ""
+
+									let pageNumber = 1
+									let listHtml = ""
+									let msgCount = parseInt($("#nav-usernotice-unread-notices").text());
+
+									function getNoticePageHtml(number, callback) {
+										$.ajax({
+											type: "get",
+											url: Utils.getHost() + "/my-notice-0-" + number + ".htm",
+											dataType: "html",
+											async: true,
+											success: function(html) {
+												callback && callback(html)
+											}
+										});
+									}
+
+									function getClass(threadName) {
+										if (threadName.startsWith("评论了")) {
+											return ".single-comment";
+										} else if (threadName.startsWith("回复了")) {
+											return ".reply-comment";
+										} else {
+											return null;
+										}
+									}
+
+									function gatherData(callback) {
+										getNoticePageHtml(pageNumber++, function(html) {
 											$(html).find(".readbtn").each(function() {
+												msgCount--
 												let div = $(this).parent().parent().parent()
 												let threadName = div.find(".comment-info").text()
-												if (threadName.indexOf("评论") == -1) {
+												let elementClass = getClass(threadName);
+												if (elementClass == null) {
 													return
 												}
 												let replyObject = {}
 												replyObject.threadName = threadName
 												replyObject.username = div.find(".username").text()
 												replyObject.time = div.find(".username").next().text()
-												replyObject.replyInfo = div.find(".single-comment").text()
-												let ret = Utils.parsePageIdAndQuoteId(div.find(".single-comment").find("a").eq(0).attr("href"))
+												replyObject.replyInfo = div.find(elementClass).text()
+												let ret = Utils.parsePageIdAndQuoteId(div.find(elementClass).find("a").eq(0).attr("href"))
 												replyObject.pageId = ret.pageId
 												replyObject.quoteId = ret.quoteId
 												replyObject.nid = $(this).parent().parent().parent().parent().attr("data-nid")
-
 												listHtml += Utils.createReplyItem(replyObject)
 											})
-											let hasContent = listHtml.length > 0
 
-											let batchReplyDiv = $(".batch-reply-div")
-											let batchReplyConetent = $(".batch-reply-content")
-											batchReplyConetent.empty()
-											batchReplyConetent.html(listHtml)
-
-											if (hasContent) {
-												$(".reply-item").eq(0).css("margin-top", "20px")
+											if (msgCount > 0) {
+												gatherData(callback)
+											} else {
+												callback && callback()
 											}
 
-											batchReplyDiv.css("position", "absolute");
-											batchReplyDiv.css("top", p.offset().top + 45);
-											batchReplyDiv.css("left", p.offset().left - 135 + (p.outerWidth(true) / 2));
-											batchReplyDiv.show(100, function() {
-												batchReplyConetent.focus();
-											});
+										})
+									}
 
-											let ok = $('<div class="quick-reply-button">回复</div>')
-											let cancel = $('<div class="quick-reply-button">取消</div>')
-											cancel.click(function() {
-												batchReplyDiv.hide(100);
-											})
-											ok.click(function() {
-												$(".reply-item").each(function() {
-													let pageId = $(this).attr("pageId")
-													let quoteId = $(this).attr("quoteId")
-													let nid = $(this).attr("nid")
-													let msg = $(this).find("textarea").val()
-													if (msg && msg.trim().length > 0) {
-														Utils.quickReply(pageId, quoteId, msg)
-														var postdata = {
-															act: 'readone',
-															nid: nid
-														};
-														$.xpost(xn.url('my-notice'), postdata, function(code, message) {});
-													}
-												})
-												batchReplyDiv.hide()
-											})
-											batchReplyConetent.append($("<div id='reply-button-div' style='width:100%;display: flex;justify-content: space-evenly;align-items: center;'></div>"))
-											$("#reply-button-div").append(ok)
-											$("#reply-button-div").append(cancel)
+
+									gatherData(function() {
+										let hasContent = listHtml.length > 0
+
+										let batchReplyDiv = $(".batch-reply-div")
+										let batchReplyConetent = $(".batch-reply-content")
+										batchReplyConetent.empty()
+										batchReplyConetent.html(listHtml)
+
+										if (hasContent) {
+											$(".reply-item").eq(0).css("margin-top", "20px")
 										}
-									});
+
+										batchReplyDiv.css("position", "absolute");
+										batchReplyDiv.css("top", p.offset().top + 45);
+										batchReplyDiv.css("left", p.offset().left - 135 + (p.outerWidth(true) / 2));
+										batchReplyDiv.show(100, function() {
+											batchReplyConetent.focus();
+										});
+
+										let ok = $('<div class="quick-reply-button">回复</div>')
+										let cancel = $('<div class="quick-reply-button">取消</div>')
+										cancel.click(function() {
+											batchReplyDiv.hide(100);
+										})
+										ok.click(function() {
+											let index = 0;
+											let total = 0,
+												complete = 0,
+												success = 0,
+												error = 0;
+
+
+											let progress = $("<li class='nav-item nav-link'><li>")
+											$("#nav-usernotice").parent().prepend(progress)
+
+											function updateProgress() {
+												progress.text(`总回复:${total},完成:${complete},成功:${success},失败:${error} =>`)
+											}
+
+											function showResult() {
+												if (complete != total) {
+													return
+												}
+												let count = parseInt($("#nav-usernotice-unread-notices").text());
+												count -= success
+												$("#nav-usernotice-unread-notices").text(count)
+												count <= 0 && $('#nav-usernotice').removeClass('current');
+												progress.remove()
+												if (total != success) {
+													alert("总共" + total + "条回复\n成功回复" + success + "条\n当前回复间隔是" + batchInterval + "毫秒\n当间隔小导致发送请求太快时\n服务器限制导致部分请求可能不成功\n请在设置里增加间隔时间！")
+												}
+											}
+
+											$(".reply-item").each(function() {
+												let pageId = $(this).attr("pageId")
+												let quoteId = $(this).attr("quoteId")
+												let nid = $(this).attr("nid")
+												let msg = $(this).find("textarea").val()
+												if (msg && msg.trim().length > 0) {
+													total++
+													updateProgress()
+													setTimeout(function() {
+														Utils.quickReply(pageId, quoteId, msg, function() {
+															success++
+															complete++
+															updateProgress()
+															setTimeout(function() {
+																Utils.noticeSetRead(nid)
+															}, 800)
+															showResult()
+														}, function() {
+															error++
+															complete++
+															updateProgress()
+															showResult()
+														})
+													}, index * batchInterval)
+													index++;
+												}
+											})
+											batchReplyDiv.hide()
+										})
+										batchReplyConetent.append($("<div id='reply-button-div' style='width:100%;display: flex;justify-content: space-evenly;align-items: center;'></div>"))
+										$("#reply-button-div").append(ok)
+										$("#reply-button-div").append(cancel)
+									})
 								}, 1000)
 							})
 							p.mouseleave(function() {
@@ -957,7 +1040,9 @@
 			},
 			// 功能配置的html代码
 			contentHtml: function() {
-				return Utils.createMsgDiv("<h3></h3>")
+				return Utils.createDivWithTitle("批量回复间隔时间", `
+                            <input style="width:100px;" type="text" id="batchInterval-input" value="${this.config.batchInterval}" />
+                        `)
 			}
 		}
 	}
@@ -1383,6 +1468,12 @@
 				}
 			}
 		},
+		noticeSetRead: function(id) {
+			$.xpost(xn.url('my-notice'), {
+				act: 'readone',
+				nid: id
+			}, function(code, message) {});
+		},
 		parsePageIdAndQuoteId: function(href) {
 			var tmp = href.replace("thread-", "")
 			tmp = tmp.substring(0, tmp.lastIndexOf("."))
@@ -1391,12 +1482,20 @@
 				quoteId: href.split("#")[1]
 			}
 		},
-		quickReply: function(pageId, quoteId, content) {
+		quickReply: function(pageId, quoteId, content, successCallBack = null, errorCallBack = null) {
 			try {
-				var form = this.createQuickReplyForm(pageId, quoteId, content, true)
-				$("body").append(form);
-				form.trigger('submit');
-				form.remove();
+				$.ajax({
+					type: "post",
+					url: "post-create-" + pageId + "-1-" + quoteId + ".htm",
+					data: "doctype=1&return_html=1&quotepid=" + quoteId + "&message=" + content,
+					async: true,
+					success: function(html) {
+						successCallBack && successCallBack()
+					},
+					error: function(e) {
+						errorCallBack && errorCallBack()
+					}
+				});
 			} catch (e) {
 				console.log(e)
 			}
@@ -1505,9 +1604,9 @@
 		},
 		createQuickReplyForm: function(pageId, quoteId, content, jqueryObject = false) {
 			let html = `
-                    <form style="display:none;" action="post-create-${pageId}-1.htm" method="post" target="hideIframe"> 
+                    <form style="display:none;" action="post-create-${pageId}.htm" method="post" target="hideIframe"> 
 					    <input type="hidden" name="doctype" value="1">
-					    <input type="hidden" name="return_html" value="1">
+					    <input type="hidden" name="return_html" value="0">
 					    <input type="hidden" name="quotepid" value="${quoteId}">    
 					    <textarea name="message">${content}</textarea>
 					</form>
@@ -1576,10 +1675,13 @@
 		createReplyItem: function(infoObject, jqueryObject = false) {
 			let html = `
                     <div class="reply-item" pageId="${infoObject.pageId}" quoteId="${infoObject.quoteId}" nid="${infoObject.nid}">
-                    ${this.createDivWithTitle(infoObject.username,'<div>'+infoObject.time+' '+infoObject.threadName+' : '+infoObject.replyInfo+'</div><textarea class="batch-reply-textarea" placeholder="留空不回复"></textarea>',false,"width:240px;border: 2px solid gray;border-style:dashed;","background-color: white !important;")}
+                    ${this.createDivWithTitle(infoObject.username,'<div>'+infoObject.time+' '+infoObject.threadName+' : <a href="'+this.getHost()+'/thread-'+infoObject.pageId+'.htm#'+infoObject.quoteId+'">'+infoObject.replyInfo+'</a></div><textarea class="batch-reply-textarea" placeholder="留空不回复"></textarea>',false,"width:240px;border: 2px solid gray;border-style:dashed;","background-color: white !important;")}
 		            </div>
                 `
 			return jqueryObject ? $(html) : html
+		},
+		getHost: function() {
+			return window.location.protocol + "//" + window.location.host
 		}
 	}
 
