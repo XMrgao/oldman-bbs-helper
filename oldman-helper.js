@@ -1,11 +1,10 @@
 // ==UserScript==
 // @name         老男人助手
 // @namespace    http://tampermonkey.net/
-// @version      0.8.1
+// @version      0.8.2
 // @description  适用于老男人游戏论坛:https://bbs.oldmanemu.net/ 的小工具
 // @author       rock128
 // @match        https://bbs.oldmanemu.net/*
-// @match        https://testbbs.com/*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
@@ -973,7 +972,7 @@
 												error = 0;
 
 
-											let progress = $("<li class='nav-item nav-link'><li>")
+											let progress = $("<li class='nav-item nav-link'></li>")
 											$("#nav-usernotice").parent().prepend(progress)
 
 											function updateProgress() {
@@ -1041,7 +1040,10 @@
 			// 功能配置的html代码
 			contentHtml: function() {
 				return Utils.createDivWithTitle("批量回复间隔时间", `
-                            <input style="width:100px;" type="text" id="batchInterval-input" value="${this.config.batchInterval}" />
+							因为服务器的访问频率限制，回复太快会有部分请求失败，所以需要设置回复间隔，不能瞬间完成。</br>
+							批量回复时，如果有失败的情况，会弹窗提示，在这里把间隔改大，直到可以全部成功</br>
+							假设有3条消息需要批量回复，设置间隔时间为1000毫秒，那么第1条会立刻回复，第2条是在1秒后回复，第3条是2秒后回复，以此类推</br></br>
+                            将回复间隔设置为<input style="width:50px;" type="text" id="batchInterval-input" value="${this.config.batchInterval}" />毫秒
                         `)
 			}
 		}
