@@ -819,6 +819,64 @@
 				return Utils.createMsgDiv("<h3>把百度云链接和提取码组合成一个可直接访问的链接，免去手动输入提取码</h3>")
 			}
 		},
+		insertHiddenContent: {
+			// 和所属对象属性名保持一致
+			id: "insertHiddenContent",
+			// 显示在界面上的标题
+			title: "插入隐藏内容优化",
+			// 配置变化时是否需要重新加载页面
+			needReload: false,
+			// 所有用到的配置全部写在这里，config对象会持久化
+			// 除 enable 属性外，其他属性要在 configKeyElementMaps 中定义一个同名属性来映射页面元素
+			config: {
+				enable: false
+			},
+			// 该功能用到的 config 属性名和 元素class/id的映射
+			configKeyElementMaps: {},
+			// 功能生效的前提条件检查
+			matchCondition: function() {
+				return Utils.isMatchPageCategory("thread-create") && !Utils.hasElement(".insertHiddenContentMark")
+			},
+			// 功能生效的逻辑代码
+			doAction: function() {
+				let loginDisplay = $(".btn.btn-primary").eq(0)
+				let replyDisplay = $(".btn.btn-primary").eq(1)
+
+                loginDisplay.attr("onclick","")
+                replyDisplay.attr("onclick","")
+
+				loginDisplay.unbind()
+				replyDisplay.unbind()
+
+				loginDisplay.click(function() {
+					let c = prompt("以下填写内容其他人登录可见：")
+					if (c && c.trim().length > 0) {
+						try {
+							UM.getEditor('message').setContent('[ttlogin]' + c + '[/ttlogin]', true)
+						} catch (err) {
+							document.getElementById('message').innerHTML += '[ttlogin]' + c + '[/ttlogin]';
+						}
+					}
+				})
+
+				replyDisplay.click(function() {
+					let c = prompt("以下填写内容其他人回复可见：")
+					if (c && c.trim().length > 0) {
+						try {
+							UM.getEditor('message').setContent('[ttreply]' + c + '[/ttreply]', true)
+						} catch (err) {
+							document.getElementById('message').innerHTML += '[ttreply]' + c + '[/ttreply]';
+						}
+					}
+				})
+
+				$("body").addClass("insertHiddenContentMark")
+			},
+			// 功能配置的html代码
+			contentHtml: function() {
+				return Utils.createMsgDiv("<h3>发帖页面插入隐藏内容按钮优化</h3>")
+			}
+		},
 		quickReply: {
 			// 和所属对象属性名保持一致
 			id: "quickReply",
