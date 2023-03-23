@@ -269,7 +269,13 @@
 			},
 			// 功能生效的逻辑代码
 			doAction: function() {
-				if ($(".alert-warning") && $(".alert-warning").text().indexOf(this.config.keyword) != -1) {
+				let issueTime = $(".username").eq(1).next().text().trim()
+				let isRecently = /^[0-9]+([秒分天]|小时)前$/.test(issueTime)
+				if (isRecently && issueTime.indexOf("天前") != -1) {
+					let day = issueTime.replace("天前", "")
+					isRecently = parseInt(day) < 7
+				}
+				if (isRecently && $(".alert-warning") && $(".alert-warning").text().indexOf(this.config.keyword) != -1) {
 					var msg = this.config.msgTemplates[Math.floor(Math.random() * this.config.msgTemplates.length)];
 					$(".message .form-control").val(msg)
 					$("#quick_reply_form").submit()
@@ -279,8 +285,8 @@
 			contentHtml: function() {
 				let html = `
                         <div>
-                            ${Utils.createDivWithTitle("识别隐藏内容的关键词",'<input type="text" id="hide-key" value="'+this.config.keyword+'" />')}
-                            ${Utils.createDivWithTitle("自动回复消息模板",'<textarea placeholder="页面有隐藏内容自动回复的消息，一行一条，将随机选一条回复" class="setting-textarea" id="auto-reply">'+this.config.msgTemplates.join("\n")+'</textarea>')}                            
+                            ${Utils.createDivWithTitle("识别隐藏内容的关键词", '<input type="text" id="hide-key" value="' + this.config.keyword + '" />')}
+                            ${Utils.createDivWithTitle("自动回复消息模板", '<font style="color:red;"><b>为防止过于久远的帖子被自动回复顶贴，只有发布时间是7天以内的帖子才会自动回复</b><font></br>    <textarea placeholder="页面有隐藏内容自动回复的消息，一行一条，将随机选一条回复" class="setting-textarea" id="auto-reply">' + this.config.msgTemplates.join("\n") + '</textarea>')}                            
                         </div>
                     `
 				return html
@@ -370,9 +376,9 @@
 			contentHtml: function() {
 				let html = `
                         <div>
-                            ${Utils.createDivWithTitle("背景色",' <input size="7" data-jscolor="{zIndex:9999}" id="background-color-input" value="'+this.config.backgroundColor+'" /> ')}
+                            ${Utils.createDivWithTitle("背景色", ' <input size="7" data-jscolor="{zIndex:9999}" id="background-color-input" value="' + this.config.backgroundColor + '" /> ')}
 
-                            ${Utils.createDivWithTitle("文字颜色",'<input size="7" id="font-color-input" value="'+this.config.fontColor+'" data-jscolor="{zIndex:9999}">')}
+                            ${Utils.createDivWithTitle("文字颜色", '<input size="7" id="font-color-input" value="' + this.config.fontColor + '" data-jscolor="{zIndex:9999}">')}
                         </div>
                     `
 				return html
@@ -454,8 +460,8 @@
 			contentHtml: function() {
 				let html = `
                         <div>
-                            ${Utils.createDivWithTitle("背景色",' <input size="7" data-jscolor="{zIndex:9999}" id="author-background-color-input" value="'+this.config.backgroundColor+'" /> ')}
-                            ${Utils.createDivWithTitle("引用背景颜色",'<input size="7" id="author-quote-background-color-input" value="'+this.config.quoteColor+'" data-jscolor="{zIndex:9999}">')}
+                            ${Utils.createDivWithTitle("背景色", ' <input size="7" data-jscolor="{zIndex:9999}" id="author-background-color-input" value="' + this.config.backgroundColor + '" /> ')}
+                            ${Utils.createDivWithTitle("引用背景颜色", '<input size="7" id="author-quote-background-color-input" value="' + this.config.quoteColor + '" data-jscolor="{zIndex:9999}">')}
                         </div>
                     `
 				return html
@@ -842,8 +848,8 @@
 				let loginDisplay = $(".btn.btn-primary").eq(0)
 				let replyDisplay = $(".btn.btn-primary").eq(1)
 
-                loginDisplay.attr("onclick","")
-                replyDisplay.attr("onclick","")
+				loginDisplay.attr("onclick", "")
+				replyDisplay.attr("onclick", "")
 
 				loginDisplay.unbind()
 				replyDisplay.unbind()
@@ -875,234 +881,6 @@
 			// 功能配置的html代码
 			contentHtml: function() {
 				return Utils.createMsgDiv("<h3>发帖页面插入隐藏内容按钮优化</h3>")
-			}
-		},
-		quickReply: {
-			// 和所属对象属性名保持一致
-			id: "quickReply",
-			// 显示在界面上的标题
-			title: "快速回复",
-			// 配置变化时是否需要重新加载页面
-			needReload: false,
-			// 所有用到的配置全部写在这里，config对象会持久化
-			// 除 enable 属性外，其他属性要在 configKeyElementMaps 中定义一个同名属性来映射页面元素
-			config: {
-				enable: false,
-				batchInterval: 1000
-			},
-			// 该功能用到的 config 属性名和 元素class/id的映射
-			configKeyElementMaps: {
-				batchInterval: {
-					element: "#batchInterval-input"
-				}
-			},
-			// 功能生效的前提条件检查
-			matchCondition: function() {
-				return !Utils.hasElement(".quickReplyMark")
-			},
-			// 功能生效的逻辑代码
-			doAction: function() {
-				let batchInterval = this.config.batchInterval
-				$(".single-comment").each(function() {
-					let href = $(this).find("a").eq(0).attr("href")
-					let ret = Utils.parsePageIdAndQuoteId(href)
-					if (!ret) {
-						return
-					}
-					let notice = $(this).parent().parent().parent()
-					let button = $('<div class="quick-reply-button" pageId="' + ret.pageId + '" quoteId="' + ret.quoteId + '">回复</div>')
-					button.click(function() {
-						let pageId = $(this).attr("pageId")
-						let quoteId = $(this).attr("quoteId")
-						let msg = prompt("输入回复内容")
-						if (msg && msg.trim().length > 0) {
-							Utils.quickReply(pageId, quoteId, msg)
-							notice.addClass("isread")
-							let readBtn = notice.find('.readbtn');
-							if (readBtn && readBtn.length > 0) {
-								readBtn.trigger("click")
-								readBtn.removeClass('readbtn').text("已读");
-							}
-						}
-					})
-					$(this).parent().append(button)
-				})
-
-				if (Utils.hasElement("#nav-usernotice-unread-notices")) {
-					try {
-						let count = parseInt($("#nav-usernotice-unread-notices").text())
-						if (count > 0) {
-							let p = $("#nav-usernotice-unread-notices").parent().parent()
-							var openQuickReplyTimeout = null;
-							p.mouseenter(function() {
-								if ($(".batch-reply-div").css("display") != 'none') {
-									return
-								}
-								openQuickReplyTimeout = setTimeout(function() {
-
-									let pageNumber = 1
-									let listHtml = ""
-									let msgCount = parseInt($("#nav-usernotice-unread-notices").text());
-
-									function getNoticePageHtml(number, callback) {
-										$.ajax({
-											type: "get",
-											url: Utils.getHost() + "/my-notice-0-" + number + ".htm",
-											dataType: "html",
-											async: true,
-											success: function(html) {
-												callback && callback(html)
-											}
-										});
-									}
-
-									function getClass(threadName) {
-										if (threadName.startsWith("评论了")) {
-											return ".single-comment";
-										} else if (threadName.startsWith("回复了")) {
-											return ".reply-comment";
-										} else {
-											return null;
-										}
-									}
-
-									function gatherData(callback) {
-										getNoticePageHtml(pageNumber++, function(html) {
-											$(html).find(".readbtn").each(function() {
-												msgCount--
-												let div = $(this).parent().parent().parent()
-												let threadName = div.find(".comment-info").text()
-												let elementClass = getClass(threadName);
-												if (elementClass == null) {
-													return
-												}
-												let replyObject = {}
-												replyObject.threadName = threadName
-												replyObject.username = div.find(".username").text()
-												replyObject.time = div.find(".username").next().text()
-												replyObject.replyInfo = div.find(elementClass).text()
-												let ret = Utils.parsePageIdAndQuoteId(div.find(elementClass).find("a").eq(0).attr("href"))
-												replyObject.pageId = ret.pageId
-												replyObject.quoteId = ret.quoteId
-												replyObject.nid = $(this).parent().parent().parent().parent().attr("data-nid")
-												listHtml += Utils.createReplyItem(replyObject)
-											})
-
-											if (msgCount > 0) {
-												gatherData(callback)
-											} else {
-												callback && callback()
-											}
-
-										})
-									}
-
-
-									gatherData(function() {
-										let hasContent = listHtml.length > 0
-
-										let batchReplyDiv = $(".batch-reply-div")
-										let batchReplyConetent = $(".batch-reply-content")
-										batchReplyConetent.empty()
-										batchReplyConetent.html(listHtml)
-
-										if (hasContent) {
-											$(".reply-item").eq(0).css("margin-top", "20px")
-										}
-
-										batchReplyDiv.css("position", "absolute");
-										batchReplyDiv.css("top", p.offset().top + 45);
-										batchReplyDiv.css("left", p.offset().left - 135 + (p.outerWidth(true) / 2));
-										batchReplyDiv.show(100, function() {
-											batchReplyConetent.focus();
-										});
-
-										let ok = $('<div class="quick-reply-button">回复</div>')
-										let cancel = $('<div class="quick-reply-button">取消</div>')
-										cancel.click(function() {
-											batchReplyDiv.hide(100);
-										})
-										ok.click(function() {
-											let index = 0;
-											let total = 0,
-												complete = 0,
-												success = 0,
-												error = 0;
-
-
-											let progress = $("<li class='nav-item nav-link'></li>")
-											$("#nav-usernotice").parent().prepend(progress)
-
-											function updateProgress() {
-												progress.text(`总回复:${total},完成:${complete},成功:${success},失败:${error} =>`)
-											}
-
-											function showResult() {
-												if (complete != total) {
-													return
-												}
-												let count = parseInt($("#nav-usernotice-unread-notices").text());
-												count -= success
-												$("#nav-usernotice-unread-notices").text(count)
-												count <= 0 && $('#nav-usernotice').removeClass('current');
-												progress.remove()
-												if (total != success) {
-													alert("总共" + total + "条回复\n成功回复" + success + "条\n当前回复间隔是" + batchInterval + "毫秒\n当间隔小导致发送请求太快时\n服务器限制导致部分请求可能不成功\n请在设置里增加间隔时间！")
-												}
-											}
-
-											$(".reply-item").each(function() {
-												let pageId = $(this).attr("pageId")
-												let quoteId = $(this).attr("quoteId")
-												let nid = $(this).attr("nid")
-												let msg = $(this).find("textarea").val()
-												if (msg && msg.trim().length > 0) {
-													total++
-													updateProgress()
-													setTimeout(function() {
-														Utils.quickReply(pageId, quoteId, msg, function() {
-															success++
-															complete++
-															updateProgress()
-															setTimeout(function() {
-																Utils.noticeSetRead(nid)
-															}, 800)
-															showResult()
-														}, function() {
-															error++
-															complete++
-															updateProgress()
-															showResult()
-														})
-													}, index * batchInterval)
-													index++;
-												}
-											})
-											batchReplyDiv.hide()
-										})
-										batchReplyConetent.append($("<div id='reply-button-div' style='width:100%;display: flex;justify-content: space-evenly;align-items: center;'></div>"))
-										$("#reply-button-div").append(ok)
-										$("#reply-button-div").append(cancel)
-									})
-								}, 1000)
-							})
-							p.mouseleave(function() {
-								openQuickReplyTimeout && clearTimeout(openQuickReplyTimeout)
-							})
-						}
-					} catch (e) {}
-				}
-
-				$("body").addClass("quickReplyMark")
-			},
-			// 功能配置的html代码
-			contentHtml: function() {
-				return Utils.createDivWithTitle("批量回复间隔时间", `
-							因为服务器的访问频率限制，回复太快会有部分请求失败，所以需要设置回复间隔，不能瞬间完成。</br>
-							批量回复时，如果有失败的情况，会弹窗提示，在这里把间隔改大，直到可以全部成功</br>
-							假设有3条消息需要批量回复，设置间隔时间为1000毫秒，那么第1条会立刻回复，第2条是在1秒后回复，第3条是2秒后回复，以此类推</br></br>
-                            将回复间隔设置为<input style="width:50px;" type="text" id="batchInterval-input" value="${this.config.batchInterval}" />毫秒
-                        `)
 			}
 		}
 	}
@@ -1735,13 +1513,24 @@
 		createReplyItem: function(infoObject, jqueryObject = false) {
 			let html = `
                     <div class="reply-item" pageId="${infoObject.pageId}" quoteId="${infoObject.quoteId}" nid="${infoObject.nid}">
-                    ${this.createDivWithTitle(infoObject.username,'<div>'+infoObject.time+' '+infoObject.threadName+' : <a href="'+this.getHost()+'/thread-'+infoObject.pageId+'.htm#'+infoObject.quoteId+'">'+infoObject.replyInfo+'</a></div><textarea class="batch-reply-textarea" placeholder="留空不回复"></textarea>',false,"width:240px;border: 2px solid gray;border-style:dashed;","background-color: white !important;")}
+                    ${this.createDivWithTitle(infoObject.username, '<div>' + infoObject.time + ' ' + infoObject.threadName + ' : <a href="' + this.getHost() + '/thread-' + infoObject.pageId + '.htm#' + infoObject.quoteId + '">' + infoObject.replyInfo + '</a></div><textarea class="batch-reply-textarea" placeholder="留空不回复"></textarea>', false, "width:240px;border: 2px solid gray;border-style:dashed;", "background-color: white !important;")}
 		            </div>
                 `
 			return jqueryObject ? $(html) : html
 		},
 		getHost: function() {
 			return window.location.protocol + "//" + window.location.host
+		},
+		fetchHtml: function(webPath, callback, jqueryObject = false) {
+			$.ajax({
+				type: "get",
+				url: Utils.getHost() + webPath,
+				dataType: "html",
+				async: true,
+				success: function(html) {
+					callback && callback(jqueryObject ? $(html) : html)
+				}
+			});
 		}
 	}
 
