@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         老男人助手
 // @namespace    http://tampermonkey.net/
-// @version      0.8.2
+// @version      0.8.7
 // @description  适用于老男人游戏论坛:https://bbs.oldmanemu.net/ 的小工具
 // @author       rock128
 // @match        https://bbs.oldmanemu.net/*
@@ -270,7 +270,7 @@
 			// 功能生效的逻辑代码
 			doAction: function() {
 				let issueTime = $(".username").eq(1).next().text().trim()
-				let isRecently = /^[0-9]+([秒分天]|小时)前$/.test(issueTime)
+				let isRecently = /^[0-9]+(秒|分钟|小时|天)前$/.test(issueTime)
 				if (isRecently && issueTime.indexOf("天前") != -1) {
 					let day = issueTime.replace("天前", "")
 					isRecently = parseInt(day) < 7
