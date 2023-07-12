@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         老男人助手
 // @namespace    http://tampermonkey.net/
-// @version      0.8.7
+// @version      0.8.8
 // @description  适用于老男人游戏论坛:https://bbs.oldmanemu.net/ 的小工具
 // @author       rock128
 // @match        https://bbs.oldmanemu.net/*
