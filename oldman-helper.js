@@ -247,14 +247,10 @@
 			// 除 enable 属性外，其他属性要在 configKeyElementMaps 中定义一个同名属性来映射页面元素
 			config: {
 				enable: false,
-				keyword: "此处隐藏内容请回复后再查看",
 				msgTemplates: []
 			},
 			// 该功能用到的 config 属性名和 元素class/id的映射
 			configKeyElementMaps: {
-				keyword: {
-					element: "#hide-key"
-				},
 				msgTemplates: {
 					element: "#auto-reply",
 					getVal: function() {
@@ -275,7 +271,7 @@
 					let day = issueTime.replace("天前", "")
 					isRecently = parseInt(day) < 7
 				}
-				if (isRecently && $(".alert-warning") && $(".alert-warning").text().indexOf(this.config.keyword) != -1) {
+				if (isRecently && $(".alert-warning") && $(".alert-warning").text().indexOf("此处隐藏内容请回复后再查看") != -1) {
 					var msg = this.config.msgTemplates[Math.floor(Math.random() * this.config.msgTemplates.length)];
 					$(".message .form-control").val(msg)
 					$("#quick_reply_form").submit()
@@ -285,7 +281,6 @@
 			contentHtml: function() {
 				let html = `
                         <div>
-                            ${Utils.createDivWithTitle("识别隐藏内容的关键词", '<input type="text" id="hide-key" value="' + this.config.keyword + '" />')}
                             ${Utils.createDivWithTitle("自动回复消息模板", '<font style="color:red;"><b>为防止过于久远的帖子被自动回复顶贴，只有发布时间是7天以内的帖子才会自动回复</b><font></br>    <textarea placeholder="页面有隐藏内容自动回复的消息，一行一条，将随机选一条回复" class="setting-textarea" id="auto-reply">' + this.config.msgTemplates.join("\n") + '</textarea>')}                            
                         </div>
                     `
@@ -1274,8 +1269,10 @@
 					} else {
 						//拿到属性key的映射对象
 						let mapObject = functionObject.configKeyElementMaps[configName]
-						// 如果映射对象有getVal函数，那么就调用getVal函数取得值，如果没有，就默认调用 getElementVal 函数取值
-						val = mapObject.getVal ? mapObject.getVal() : this.getElementVal(mapObject.element)
+						if(mapObject){
+							// 如果映射对象有getVal函数，那么就调用getVal函数取得值，如果没有，就默认调用 getElementVal 函数取值
+							val = mapObject.getVal ? mapObject.getVal() : this.getElementVal(mapObject.element)
+						}
 					}
 					functionObject.config[configName] = val
 					config[configName] = val
