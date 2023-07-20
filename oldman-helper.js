@@ -2,7 +2,7 @@
 // @name         老男人助手
 // @namespace    http://tampermonkey.net/
 // @version      0.8.9
-// @description  适用于老男人游戏论坛:https://bbs.oldmanemu.net/ 的小工具
+// @description  适用于老男人游戏论坛:https://bbs.oldmantvg.net/ 的小工具
 // @author       rock128
 // @match        https://bbs.oldmanemu.net/*
 // @match        https://bbs.oldmantvg.net/*
@@ -1375,7 +1375,7 @@
 		},
 		// 判断当前页面是否为主页
 		isIndexPage: function() {
-			return window.location.href == 'https://bbs.oldmanemu.net/'
+			return window.location.href == 'https://bbs.oldmanemu.net/' || window.location.href == 'https://bbs.oldmantvg.net/'
 		},
 		getElementVal(idOrClass) {
 			return $(idOrClass).val()
@@ -1489,7 +1489,7 @@
 		createDefaultContentHtml: function(jqueryObject = false) {
 			let html = `
                     <span style="font-size:30px;">老男人助手</span><span style="font-size:15px;">by rock</span>   </br>                 
-                    <p>有任何bug反馈或者功能建议，请在论坛回复<a href="https://bbs.oldmanemu.net/thread-13819.htm">我的帖子</a>，或者发送邮件给我 1099607871@qq.com</p>
+                    <p>有任何bug反馈或者功能建议，请在论坛回复<a href="https://bbs.oldmantvg.net/thread-13819.htm">我的帖子</a>，或者发送邮件给我 1099607871@qq.com</p>
                     <p>感谢使用</p>
                 `
 			return jqueryObject ? $(html) : html
