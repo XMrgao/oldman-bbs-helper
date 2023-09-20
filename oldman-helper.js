@@ -878,6 +878,44 @@
 			contentHtml: function() {
 				return Utils.createMsgDiv("<h3>发帖页面插入隐藏内容按钮优化</h3>")
 			}
+		},
+		replyFixed: {
+			// 和所属对象属性名保持一致
+			id: "replyFixed",
+			// 显示在界面上的标题
+			title: "回复框停靠",
+			// 配置变化时是否需要重新加载页面
+			needReload: false,
+			// 所有用到的配置全部写在这里，config对象会持久化
+			// 除 enable 属性外，其他属性要在 configKeyElementMaps 中定义一个同名属性来映射页面元素
+			config: {
+				enable: false
+			},
+			// 该功能用到的 config 属性名和 元素class/id的映射
+			configKeyElementMaps: {},
+			// 功能生效的前提条件检查
+			matchCondition: function() {
+				return Utils.isMatchPageCategory("thread") && !Utils.hasElement(".replyFixed")
+			},
+			// 功能生效的逻辑代码
+			doAction: function() {
+				$("#message").focus(function(){
+					let replyInput = $(".post.newpost.media")
+					if(!replyInput){
+						return
+					}
+					if(!replyInput.hasClass("fixed-reply")){
+						replyInput.addClass("fixed-reply")
+						let width = replyInput.parent().parent().outerWidth()
+						replyInput.css("width",(width+20)+"px")
+					}					
+				})
+				$("body").addClass("replyFixed")
+			},
+			// 功能配置的html代码
+			contentHtml: function() {
+				return Utils.createMsgDiv("<h3>功能打开后，当在帖子详情页面里，回复框获得焦点后，回复框会固定在屏幕底部</h3>")
+			}
 		}
 	}
 	// 所有的工具函数都放在这里
@@ -929,6 +967,15 @@
                         display:flex;
                         flex-direction:column;
                     }
+					.fixed-reply {
+						z-index:99999;
+						position:fixed;
+						bottom:6px;
+						background-color:white;
+						border-radius:8px;
+						margin-left:-27.5px;
+						box-shadow:5px 5px 5px #808080,5px -5px 5px #808080,-5px 5px 5px #808080,-5px -5px 5px #808080;
+					}
                     .setting-item {
                         width: 100%;
                         height:30px;
