@@ -16,7 +16,7 @@
 // @license      GPL-3.0 License
 // ==/UserScript==
 
-(function() {
+(function () {
 	'use strict';
 	GM_addStyle(GM_getResourceText("css"));
 
@@ -49,19 +49,19 @@
 				}
 			},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return Utils.isMatchPageCategory("index") || Utils.isIndexPage()
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
+			doAction: function () {
 				if ($("#sign_title").text() == this.config.signTitle) {
-					$.xpost(xn.url("my-sign"), "", function(message) {
+					$.xpost(xn.url("my-sign"), "", function (message) {
 						$("#sign_title").text("已签")
 					});
 				}
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				let html = `
                         <span class="setting-item-desc-text">保持和签到按钮上的文字完全一致<span></br>
                         <input type="text" id="sign-key" value="${this.config.signTitle}" />
@@ -84,15 +84,15 @@
 			// 该功能用到的 config 属性名和 元素class/id的映射
 			configKeyElementMaps: {},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return true
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
+			doAction: function () {
 				$(".deng") && $(".deng").remove()
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				return Utils.createMsgDiv("<h3>从所有页面移除节日灯笼</h3>")
 			}
 		},
@@ -113,7 +113,7 @@
 			configKeyElementMaps: {
 				blacklist: {
 					element: "#black-list",
-					getVal: function() {
+					getVal: function () {
 						let ret = {}
 						if ($(this.element) && $(this.element).val().trim() != "") {
 							let info = $(this.element).val().split("\n");
@@ -130,28 +130,28 @@
 				}
 			},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return Utils.isMatchPageCategory("") || Utils.isMatchPageCategory("index")
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
+			doAction: function () {
 				let configObject = this.config.blacklist
-				let isBan = function(userId, type) {
+				let isBan = function (userId, type) {
 					var blackUserObject = configObject[userId];
 					if (!blackUserObject) {
 						return false;
 					}
 					return blackUserObject.banType == type
 				}
-				let hideBlackListUserContent = function() {
-					$(".media.thread.tap") && $(".media.thread.tap").each(function(i, item) {
+				let hideBlackListUserContent = function () {
+					$(".media.thread.tap") && $(".media.thread.tap").each(function (i, item) {
 						var id = $(item).children().eq(0).attr("href")
 						id = id.replace("user-", "").replace(".htm", "")
 						if (isBan(id, Utils.BLACK_TYPE_ALL) || isBan(id, Utils.BLACK_TYPE_THREAD)) {
 							$(item).hide()
 						}
 					})
-					$(".media.post") && $(".media.post").each(function(i, item) {
+					$(".media.post") && $(".media.post").each(function (i, item) {
 						var id = $(item).children().eq(0).attr("href")
 						id = id.replace("user-", "").replace(".htm", "")
 						if (isBan(id, Utils.BLACK_TYPE_ALL) || isBan(id, Utils.BLACK_TYPE_REPLY)) {
@@ -160,7 +160,7 @@
 					})
 				}
 				hideBlackListUserContent()
-				$(".avatar-3").mouseenter(function() {
+				$(".avatar-3").mouseenter(function () {
 					var href = $(this).parent().attr("href")
 					var userId = href.split("-")[1].split(".")[0]
 					var name = ""
@@ -176,7 +176,7 @@
 					} catch (e) {
 						console.log(e.message);
 					}
-					let clickCallBack = function() {
+					let clickCallBack = function () {
 						var id = $(this).attr("user-id")
 						var username = $(this).attr("user-name")
 						var banType = $(this).attr("banType")
@@ -204,11 +204,11 @@
 					operateMenu.css("left", $(this).offset().left - 70);
 					operateMenu.show();
 					operateMenu.unbind()
-					operateMenu.mouseleave(function() {
+					operateMenu.mouseleave(function () {
 						operateMenu.hide();
 					})
 				})
-				$('.avatar-3').mouseleave(function() {
+				$('.avatar-3').mouseleave(function () {
 					var href = $(this).parent().attr("href")
 					var offset = $("#user-operate-menu").offset()
 					var width = $("#user-operate-menu").outerWidth(true) + 10
@@ -222,8 +222,8 @@
 				})
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
-				let genBlackList = function() {
+			contentHtml: function () {
+				let genBlackList = function () {
 					var blackUserInfo = []
 					for (let key in this.config.blacklist) {
 						let blackUserObject = this.config.blacklist[key]
@@ -254,18 +254,18 @@
 			configKeyElementMaps: {
 				msgTemplates: {
 					element: "#auto-reply",
-					getVal: function() {
+					getVal: function () {
 						let val = $(this.element).val().trim()
 						return val == "" ? [] : val.split("\n")
 					}
 				}
 			},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return Utils.isMatchPageCategory("thread")
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
+			doAction: function () {
 				let issueTime = $(".username").eq(1).next().text().trim()
 				let isRecently = /^[0-9]+(秒|分钟|小时|天)前$/.test(issueTime)
 				if (isRecently && issueTime.indexOf("天前") != -1) {
@@ -279,7 +279,7 @@
 				}
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				let html = `
                         <div>
                             ${Utils.createDivWithTitle("自动回复消息模板", '<font style="color:red;"><b>为防止过于久远的帖子被自动回复顶贴，只有发布时间是7天以内的帖子才会自动回复</b><font></br>    <textarea placeholder="页面有隐藏内容自动回复的消息，一行一条，将随机选一条回复" class="setting-textarea" id="auto-reply">' + this.config.msgTemplates.join("\n") + '</textarea>')}                            
@@ -303,12 +303,12 @@
 			// 该功能用到的 config 属性名和 元素class/id的映射
 			configKeyElementMaps: {},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return true
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
-				$(document).keydown(function(event) {
+			doAction: function () {
+				$(document).keydown(function (event) {
 					if (event.keyCode == 37) {
 						let preA = $(".page-link:contains('◀')")
 						if (preA && preA.length > 0) {
@@ -323,7 +323,7 @@
 				});
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				return Utils.createMsgDiv("<h3>用键盘左右箭头翻页</h3>")
 			}
 		},
@@ -351,13 +351,13 @@
 				}
 			},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return true
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
+			doAction: function () {
 				let config = this.config
-				$(document).find("*").each(function(i, item) {
+				$(document).find("*").each(function (i, item) {
 					if ($(item).attr("id") == "setting-panel") {
 						return
 					}
@@ -369,7 +369,7 @@
 				})
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				let html = `
                         <div>
                             ${Utils.createDivWithTitle("背景色", ' <input size="7" data-jscolor="{zIndex:9999}" id="background-color-input" value="' + this.config.backgroundColor + '" /> ')}
@@ -395,19 +395,19 @@
 			// 该功能用到的 config 属性名和 元素class/id的映射
 			configKeyElementMaps: {},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return true
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
-				$(document).dblclick("click", function() {
+			doAction: function () {
+				$(document).dblclick("click", function () {
 					$('html,body').animate({
 						scrollTop: '0px'
 					}, 300)
 				});
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				return Utils.createMsgDiv("<h3>在任意界面双击返回顶部</h3>")
 			}
 		},
@@ -435,13 +435,13 @@
 				}
 			},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return true
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
+			doAction: function () {
 				let config = this.config
-				$(".badge.badge-secondary.small.haya-post-info-first-floor").each(function() {
+				$(".badge.badge-secondary.small.haya-post-info-first-floor").each(function () {
 					var block = $(this).parent().parent().parent().parent().get(0)
 					let oldCss = block.style.cssText || ""
 					$(block).css("cssText", oldCss + "background-color:" + config.backgroundColor + "!important;")
@@ -453,7 +453,7 @@
 				})
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				let html = `
                         <div>
                             ${Utils.createDivWithTitle("背景色", ' <input size="7" data-jscolor="{zIndex:9999}" id="author-background-color-input" value="' + this.config.backgroundColor + '" /> ')}
@@ -478,11 +478,11 @@
 			// 该功能用到的 config 属性名和 元素class/id的映射
 			configKeyElementMaps: {},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return Utils.isMatchPageCategory("thread") && !Utils.hasElement(".emojis-panel")
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
+			doAction: function () {
 				var emojisPanel = $('<div class="emojis-panel"></div>')
 				$("body").append(emojisPanel)
 				var emojRange = [
@@ -497,7 +497,7 @@
 						var d = $('<div>&#' + x + ';</div>');
 						d.addClass("emoji-item")
 						d.attr("code", "0x" + x.toString(16))
-						d.click(function() {
+						d.click(function () {
 							var code = $(this).attr("code")
 							var msg = $("#message").val()
 							var start = $("#message")[0].selectionStart
@@ -508,7 +508,7 @@
 					}
 				}
 				var button = $('<div class="open-emoji-panel">&#128516;</div>')
-				$(button).click(function() {
+				$(button).click(function () {
 					if ($(".emojis-panel").css("display") === 'none') {
 						$(".emojis-panel").css("display", "flex");
 						$(".emojis-panel").css("position", "absolute");
@@ -519,7 +519,7 @@
 						$(".emojis-panel").hide(200)
 					}
 				})
-				$("#message").focus(function() {
+				$("#message").focus(function () {
 					if ($(".emojis-panel").css("display") != 'none') {
 						$(".emojis-panel").hide(200)
 					}
@@ -528,7 +528,7 @@
 				$("#submit").parent().append(button)
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				return Utils.createMsgDiv("<h3>表情支持</h3>")
 			}
 		},
@@ -552,15 +552,15 @@
 				}
 			},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return Utils.isMatchPageCategory("thread") && !Utils.hasElement(".package-download-image")
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
+			doAction: function () {
 				var grade = this.config.grade
 				var title = "打包下载图片"
 				var button = $('<button style="margin-left:10px;" class="btn btn-outline-secondary package-download-image">' + title + '</button>')
-				button.click(function() {
+				button.click(function () {
 					$(this).attr("disabled", true);
 					if (grade != 0) {
 						var jform = $("#reward_form");
@@ -569,7 +569,7 @@
 						}
 					}
 					var array = [];
-					$('.message.break-all').find('img').each(function() {
+					$('.message.break-all').find('img').each(function () {
 						let src = $(this).attr("src")
 						if (src.indexOf("upload/avatar") == -1 && src.indexOf("view/img/avatar.png") == -1) {
 							array.push(src)
@@ -585,7 +585,7 @@
 					function getBase64Image(images, callback) {
 						var img = new Image();
 						img.setAttribute("crossOrigin", 'anonymous')
-						img.onload = function() {
+						img.onload = function () {
 							var canvas = document.createElement("canvas");
 							canvas.width = img.width
 							canvas.height = img.height
@@ -599,7 +599,7 @@
 					var file_name = '图片.zip';
 					$(".package-download-image").text("打包进度:(" + progress + "/" + array.length + ")")
 					array.forEach(item => {
-						getBase64Image(item, function(dataURL) {
+						getBase64Image(item, function (dataURL) {
 							var img_arr = dataURL.split(',');
 							let name = progress + "-" + item.substring(item.lastIndexOf("/") + 1)
 							zip.file(name, img_arr[1], {
@@ -611,7 +611,7 @@
 								$(".package-download-image").text("打包完成准备下载")
 								zip.generateAsync({
 									type: "blob"
-								}).then(function(content) {
+								}).then(function (content) {
 									$(".package-download-image").attr("disabled", false);
 									$(".package-download-image").text(title)
 									saveAs(content, file_name);
@@ -623,7 +623,7 @@
 				$(".plugin.d-flex.justify-content-center.mt-3").append(button)
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				return Utils.createDivWithTitle("自动打分", `
                             下载的同时自动给楼主帖子打 <input style="width:30px;" type="text" id="grade-input" value="${this.config.grade}" />分(填0或者不填表示不打分)</br>
                         `)
@@ -644,17 +644,17 @@
 			// 该功能用到的 config 属性名和 元素class/id的映射
 			configKeyElementMaps: {},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return true
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
-				$('.subject.break-all a').each(function() {
+			doAction: function () {
+				$('.subject.break-all a').each(function () {
 					$(this).attr("target", "_blank")
 				})
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				return Utils.createMsgDiv("<h3>打开帖子时新开一个标签页</h3>")
 			}
 		},
@@ -673,17 +673,17 @@
 			// 该功能用到的 config 属性名和 元素class/id的映射
 			configKeyElementMaps: {},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return Utils.isMatchPageCategory("thread") && !Utils.hasElement(".only-author-btn")
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
+			doAction: function () {
 				let open = "只看楼主"
 				let close = "全部显示"
 				var button = $('<button style="margin-left:10px;" class="btn btn-outline-secondary only-author-btn">' + open + '</button>')
-				button.click(function() {
+				button.click(function () {
 					if ($(this).text() == open) {
-						$(".avatar-3").each(function() {
+						$(".avatar-3").each(function () {
 							let authorId = $("div.media").eq(0).find("a").eq(0).attr("href").replace("user-", "").replace(".htm", "")
 							let uid = $(this).parent().attr("href").replace("user-", "").replace(".htm", "")
 							if (authorId != uid) {
@@ -701,7 +701,7 @@
 				$(".plugin.d-flex.justify-content-center.mt-3").append(button)
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				return Utils.createMsgDiv("<h3>打开后帖子里会添加一个“只看楼主”按钮，点击后，当前页面只显示楼主的回复</h3>")
 			}
 		},
@@ -720,14 +720,14 @@
 			// 该功能用到的 config 属性名和 元素class/id的映射
 			configKeyElementMaps: {},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return Utils.isMatchPageCategory("thread") && !Utils.hasElement(".bindReplyAdditionNumberEventMark")
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
+			doAction: function () {
 				if (Utils.hasElement(".icon-reply")) {
 					$(".icon-reply").eq(0).addClass("bindReplyAdditionNumberEventMark")
-					$(".icon-reply").click(function() {
+					$(".icon-reply").click(function () {
 						let number = $(this).parent().next().text().trim()
 						number = "回复" + number + ": "
 						var msg = $("#message").val()
@@ -738,7 +738,7 @@
 				}
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				return Utils.createMsgDiv("<h3>当你回复某一楼层时，回复中会自动附带楼层号码</h3>")
 			}
 		},
@@ -757,15 +757,15 @@
 			// 该功能用到的 config 属性名和 元素class/id的映射
 			configKeyElementMaps: {},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return Utils.isMatchPageCategory("thread") && !Utils.hasElement(".parseBaiduYunLinkMark")
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
+			doAction: function () {
 				var linkpattern = /https?:\/\/pan\.baidu\.com\/s\/[a-zA-Z0-9?=_-]*/
-				$(":contains(https://pan.baidu.com/s/)").filter(function() {
+				$(":contains(https://pan.baidu.com/s/)").filter(function () {
 					return $(this).children().length === 0
-				}).each(function() {
+				}).each(function () {
 					let parent = $(this).parent()
 					let text = parent.text()
 					let url = linkpattern.exec(text)[0]
@@ -797,18 +797,18 @@
 
 					$('.message.break-all').eq(0).append(Utils.createDivWithTitle("老男人助手解析百度云链接结果", '<a class="baiduYunLink" target="_blank" href="' + finalUrl + '">' + finalUrl + '</a> <i url="' + finalUrl + '" style="font-size: 25px;" class="copy-link fa fa-copy"></i><span style="margin-left:5px;display:none;color:red;">链接已经复制到剪贴板</span>', true, "width:100%;border: 2px solid orange;border-style: dashed;", "background-color:#f8f9fa !important;"))
 
-					$(".alert.alert-success").each(function() {
+					$(".alert.alert-success").each(function () {
 						if ($(this).text().trim() == "" && !Utils.hasElement("img", this)) {
 							$(this).hide()
 						}
 					})
 
-					$(".copy-link").click(function() {
+					$(".copy-link").click(function () {
 						let url = $(this).attr("url")
 						navigator.clipboard.writeText(url)
 						let tip = $(this).next()
 						tip.show();
-						setTimeout(function() {
+						setTimeout(function () {
 							tip.hide();
 						}, 500)
 					})
@@ -817,7 +817,7 @@
 				$("body").addClass("parseBaiduYunLinkMark")
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				return Utils.createMsgDiv("<h3>把百度云链接和提取码组合成一个可直接访问的链接，免去手动输入提取码</h3>")
 			}
 		},
@@ -836,11 +836,11 @@
 			// 该功能用到的 config 属性名和 元素class/id的映射
 			configKeyElementMaps: {},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return Utils.isMatchPageCategory("thread-create") && !Utils.hasElement(".insertHiddenContentMark")
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
+			doAction: function () {
 				let loginDisplay = $(".btn.btn-primary").eq(0)
 				let replyDisplay = $(".btn.btn-primary").eq(1)
 
@@ -850,7 +850,7 @@
 				loginDisplay.unbind()
 				replyDisplay.unbind()
 
-				loginDisplay.click(function() {
+				loginDisplay.click(function () {
 					let c = prompt("以下填写内容其他人登录可见：")
 					if (c && c.trim().length > 0) {
 						try {
@@ -861,7 +861,7 @@
 					}
 				})
 
-				replyDisplay.click(function() {
+				replyDisplay.click(function () {
 					let c = prompt("以下填写内容其他人回复可见：")
 					if (c && c.trim().length > 0) {
 						try {
@@ -875,7 +875,7 @@
 				$("body").addClass("insertHiddenContentMark")
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				return Utils.createMsgDiv("<h3>发帖页面插入隐藏内容按钮优化</h3>")
 			}
 		},
@@ -894,53 +894,53 @@
 			// 该功能用到的 config 属性名和 元素class/id的映射
 			configKeyElementMaps: {},
 			// 功能生效的前提条件检查
-			matchCondition: function() {
+			matchCondition: function () {
 				return Utils.isMatchPageCategory("thread") && !Utils.hasElement(".replyFixed")
 			},
 			// 功能生效的逻辑代码
-			doAction: function() {
-				$("#message").focus(function(){
+			doAction: function () {
+				$("#message").focus(function () {
 					let replyInput = $(".post.newpost.media")
-					if(!replyInput){
+					if (!replyInput) {
 						return
 					}
-					function effect () {
+					function effect() {
 						replyInput.addClass("fixed-reply")
 						let width = replyInput.parent().parent().outerWidth()
-						replyInput.css("width",(width+20)+"px")
+						replyInput.css("width", (width + 20) + "px")
 						$("#advanced_reply").parent().prepend('<a class="icon-mail-forward text-muted" href="javascript:void(0)" id="cancel-reply-fixed"> 取消吸附</a>')
-						$("#cancel-reply-fixed").click(function(){
+						$("#cancel-reply-fixed").click(function () {
 							cancel()
 						})
 						$(".fixed-reply").find(".mr-3").hide()
-						$(".fixed-reply").find(".d-flex.justify-content-between.small.text-muted").css("cssText","display:none !important")
+						$(".fixed-reply").find(".d-flex.justify-content-between.small.text-muted").css("cssText", "display:none !important")
 						let o = $($($(".fixed-reply").children()[1]).children()[1])
-						o.css("display","flex")
-						o.css("justify-content","center")
-						o.css("align-items","center")						
-						$("#quick_reply_form").css("width","98%")
+						o.css("display", "flex")
+						o.css("justify-content", "center")
+						o.css("align-items", "center")
+						$("#quick_reply_form").css("width", "98%")
 					}
-					function cancel () {						
+					function cancel() {
 						$("#cancel-reply-fixed").remove()
 						$(".fixed-reply").find(".mr-3").show()
 						$(".fixed-reply").find(".d-flex.justify-content-between.small.text-muted").show()
 						let o = $($($(".fixed-reply").children()[1]).children()[1])
-						o.css("display","")
-						o.css("justify-content","")
-						o.css("align-items","")						
-						$("#quick_reply_form").css("width","")
+						o.css("display", "")
+						o.css("justify-content", "")
+						o.css("align-items", "")
+						$("#quick_reply_form").css("width", "")
 						replyInput.removeClass("fixed-reply")
-						replyInput.css("width","")
+						replyInput.css("width", "")
 					}
 
-					if(!replyInput.hasClass("fixed-reply")){
+					if (!replyInput.hasClass("fixed-reply")) {
 						effect()
 					}
 				})
 				$("body").addClass("replyFixed")
 			},
 			// 功能配置的html代码
-			contentHtml: function() {
+			contentHtml: function () {
 				return Utils.createMsgDiv("<h3>功能打开后，当在帖子详情页面里，回复框获得焦点后，回复框会吸附在屏幕底部</h3>")
 			}
 		}
@@ -1276,7 +1276,7 @@
 		      <iframe name="hideIframe" style="display:none;"></iframe>
             `,
 		// 插件初始化
-		init: function() {
+		init: function () {
 			var headHTML = document.getElementsByTagName('head')[0].innerHTML;
 			headHTML = '<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">' + headHTML;
 			document.getElementsByTagName('head')[0].innerHTML = headHTML;
@@ -1288,7 +1288,7 @@
 			//创建设置面板
 			$('body').append(this.createSettingPanel(true))
 			//绑定背景层事件
-			$("#overlay-panel").click(function() {
+			$("#overlay-panel").click(function () {
 				$("#setting-panel").hide(200)
 				$("#overlay-panel").hide()
 				Utils.saveConfig(window.currentFunctionKey)
@@ -1297,7 +1297,7 @@
 			//创建功能列表
 			this.createSettingItems(settingObject)
 			//绑定设置按钮点击事件，点击后隐藏/显示设置面板
-			window.openOldManHelper = function() {
+			window.openOldManHelper = function () {
 				let settingPanel = $("#setting-panel");
 				let overlayPanel = $("#overlay-panel");
 				if (settingPanel.css("display") === 'none') {
@@ -1316,10 +1316,10 @@
 					Utils.reloadPage(window.currentFunctionKey)
 				}
 			}
-			$("#setting_btn").click(function() {
+			$("#setting_btn").click(function () {
 				window.openOldManHelper()
 			})
-			$('body').mousemove(function(e) {
+			$('body').mousemove(function (e) {
 				e = e || window.event;
 				window.__xx = e.pageX || e.clientX + document.body.scroolLeft;
 				window.__yy = e.pageY || e.clientY + document.body.scrollTop;
@@ -1327,7 +1327,7 @@
 
 			this.applyFunction()
 		},
-		saveConfig: function(functionKey) {
+		saveConfig: function (functionKey) {
 			if (!functionKey || !settingObject[functionKey]) {
 				return
 			}
@@ -1344,7 +1344,7 @@
 					} else {
 						//拿到属性key的映射对象
 						let mapObject = functionObject.configKeyElementMaps[configName]
-						if(mapObject){
+						if (mapObject) {
 							// 如果映射对象有getVal函数，那么就调用getVal函数取得值，如果没有，就默认调用 getElementVal 函数取值
 							val = mapObject.getVal ? mapObject.getVal() : this.getElementVal(mapObject.element)
 						}
@@ -1360,7 +1360,7 @@
 
 			this.applyFunction(functionKey)
 		},
-		loadConfig: function() {
+		loadConfig: function () {
 			for (let functionName of Object.keys(settingObject)) {
 				let item = settingObject[functionName]
 				let c = localStorage.getItem(this.configPrefix + "__" + functionName)
@@ -1378,13 +1378,13 @@
 				}
 			}
 		},
-		noticeSetRead: function(id) {
+		noticeSetRead: function (id) {
 			$.xpost(xn.url('my-notice'), {
 				act: 'readone',
 				nid: id
-			}, function(code, message) {});
+			}, function (code, message) { });
 		},
-		parsePageIdAndQuoteId: function(href) {
+		parsePageIdAndQuoteId: function (href) {
 			var tmp = href.replace("thread-", "")
 			tmp = tmp.substring(0, tmp.lastIndexOf("."))
 			return {
@@ -1392,17 +1392,17 @@
 				quoteId: href.split("#")[1]
 			}
 		},
-		quickReply: function(pageId, quoteId, content, successCallBack = null, errorCallBack = null) {
+		quickReply: function (pageId, quoteId, content, successCallBack = null, errorCallBack = null) {
 			try {
 				$.ajax({
 					type: "post",
 					url: "post-create-" + pageId + "-1-" + quoteId + ".htm",
 					data: "doctype=1&return_html=1&quotepid=" + quoteId + "&message=" + content,
 					async: true,
-					success: function(html) {
+					success: function (html) {
 						successCallBack && successCallBack()
 					},
-					error: function(e) {
+					error: function (e) {
 						errorCallBack && errorCallBack()
 					}
 				});
@@ -1410,23 +1410,23 @@
 				console.log(e)
 			}
 		},
-		getCurrentPageThreadId: function() {
+		getCurrentPageThreadId: function () {
 			return window.location.href.split("-")[1].replace(".htm", "")
 		},
-		hasElement: function(el, root = null) {
+		hasElement: function (el, root = null) {
 			return root ? $(root).find(el).length > 0 : $(el).length > 0
 		},
-		getCurrentFunctionObject: function() {
+		getCurrentFunctionObject: function () {
 			if (!window.currentFunctionKey) {
 				return null;
 			}
 			let object = settingObject[window.currentFunctionKey]
 			return object ? object : null;
 		},
-		isSettingPanelShow: function() {
+		isSettingPanelShow: function () {
 			return $("#setting-panel").css("display") != 'none'
 		},
-		reloadPage: function(functionKey) {
+		reloadPage: function (functionKey) {
 			if (!functionKey || !settingObject[functionKey]) {
 				return
 			}
@@ -1435,7 +1435,7 @@
 				window.location.reload();
 			}
 		},
-		loadJSColor: function() {
+		loadJSColor: function () {
 			var input = $("[data-jscolor]");
 			for (var i = 0; i < input.length; i++) {
 				var picker = new jscolor(input[i]);
@@ -1444,18 +1444,18 @@
 			jscolor.init();
 		},
 		// 判断页面地址是否有指定前缀
-		isMatchPageCategory: function(pagePrefix) {
+		isMatchPageCategory: function (pagePrefix) {
 			return window.location.href.startsWith(window.location.protocol + "//" + window.location.host + "/" + pagePrefix)
 		},
 		// 判断当前页面是否为主页
-		isIndexPage: function() {
+		isIndexPage: function () {
 			return window.location.href == 'https://bbs.oldmanemu.net/' || window.location.href == 'https://bbs.oldmantvg.net/'
 		},
 		getElementVal(idOrClass) {
 			return $(idOrClass).val()
 		},
-		applyFunction: function(functionName = "") {
-			let applyFn = function(fn) {
+		applyFunction: function (functionName = "") {
+			let applyFn = function (fn) {
 				if (fn && fn.config && fn.config.enable && fn.doAction) {
 					if (!fn.matchCondition || (fn.matchCondition && fn.matchCondition())) {
 						fn.doAction();
@@ -1471,8 +1471,8 @@
 			}
 		},
 		// 创建开关按钮
-		createIosThemeSwitch: function(item, jqueryObject = false) {
-			let checked = function(item) {
+		createIosThemeSwitch: function (item, jqueryObject = false) {
+			let checked = function (item) {
 				return item.config.enable ? 'checked="checked"' : ''
 			}
 			let html = `
@@ -1484,7 +1484,7 @@
 			return jqueryObject ? $(html) : html
 		},
 		//创建功能div
-		createSettingItem: function(functionKey, item, jqueryObject = false) {
+		createSettingItem: function (functionKey, item, jqueryObject = false) {
 			let html = `
                     <div class="setting-item" functionKey="${functionKey}">
                         <div style="flex-grow: 6;display: flex;margin-left:10px; align-items: center;max-width: 170px;">
@@ -1498,7 +1498,7 @@
 			return jqueryObject ? $(html) : html
 		},
 		//创建设置面板
-		createSettingPanel: function(jqueryObject = false) {
+		createSettingPanel: function (jqueryObject = false) {
 			let html = `
                     <div id="setting-panel">
                         <div class="setting-block setting-item-list"></div>
@@ -1512,7 +1512,7 @@
                 `
 			return jqueryObject ? $(html) : html
 		},
-		createQuickReplyForm: function(pageId, quoteId, content, jqueryObject = false) {
+		createQuickReplyForm: function (pageId, quoteId, content, jqueryObject = false) {
 			let html = `
                     <form style="display:none;" action="post-create-${pageId}.htm" method="post" target="hideIframe"> 
 					    <input type="hidden" name="doctype" value="1">
@@ -1523,19 +1523,19 @@
                 `
 			return jqueryObject ? $(html) : html
 		},
-		setCurrentContentHtml: function(functionObject, ifFnIsNullUseDefault = true) {
+		setCurrentContentHtml: function (functionObject, ifFnIsNullUseDefault = true) {
 			$(".content").html(functionObject && functionObject.contentHtml ? functionObject.contentHtml() : ifFnIsNullUseDefault ? this.createDefaultContentHtml() : "")
 			Utils.loadJSColor()
 		},
 		// 创建功能列表
-		createSettingItems: function(settingObject) {
+		createSettingItems: function (settingObject) {
 			var list = $(".setting-item-list")
 			let index = 0;
 			let lastIndex = Object.keys(settingObject).length - 1
 			for (let functionName of Object.keys(settingObject)) {
 				let item = settingObject[functionName]
 				let setting = this.createSettingItem(functionName, item, true)
-				setting.click(function() {
+				setting.click(function () {
 					window.lastFunctionKey = window.currentFunctionKey
 					window.currentFunctionKey = $(this).attr("functionKey")
 					Utils.saveConfig(window.lastFunctionKey)
@@ -1549,7 +1549,7 @@
 				}
 			}
 		},
-		createDivWithTitle: function(title, contentHtml, jqueryObject = false, styles = "", titleStyles = "") {
+		createDivWithTitle: function (title, contentHtml, jqueryObject = false, styles = "", titleStyles = "") {
 			let html = `
                     <div class="setting-item-section" style="${styles}">
                         <h1 class="setting-item-section-title"><span style="${titleStyles}">${title}</span></h1>
@@ -1560,7 +1560,7 @@
                 `
 			return jqueryObject ? $(html) : html
 		},
-		createDefaultContentHtml: function(jqueryObject = false) {
+		createDefaultContentHtml: function (jqueryObject = false) {
 			let html = `
                     <span style="font-size:30px;">老男人助手</span><span style="font-size:15px;">by rock</span>   </br>                 
                     <p>有任何bug反馈或者功能建议，请在论坛回复<a href="https://bbs.oldmantvg.net/thread-13819.htm">我的帖子</a>，或者发送邮件给我 1099607871@qq.com</p>
@@ -1568,13 +1568,13 @@
                 `
 			return jqueryObject ? $(html) : html
 		},
-		createBlackTypeButton: function(banType, userId, username, text, jqueryObject = false) {
+		createBlackTypeButton: function (banType, userId, username, text, jqueryObject = false) {
 			let html = `
                     <button class='black-type-button' banType='${banType}' user-id='${userId}' user-name='${username}'>${text}</button>
                 `
 			return jqueryObject ? $(html) : html
 		},
-		createMsgDiv: function(msgHtml, jqueryObject = false) {
+		createMsgDiv: function (msgHtml, jqueryObject = false) {
 			let html = `
                     <div class="msg-div">
                         ${msgHtml}
@@ -1582,7 +1582,7 @@
                 `
 			return jqueryObject ? $(html) : html
 		},
-		createReplyItem: function(infoObject, jqueryObject = false) {
+		createReplyItem: function (infoObject, jqueryObject = false) {
 			let html = `
                     <div class="reply-item" pageId="${infoObject.pageId}" quoteId="${infoObject.quoteId}" nid="${infoObject.nid}">
                     ${this.createDivWithTitle(infoObject.username, '<div>' + infoObject.time + ' ' + infoObject.threadName + ' : <a href="' + this.getHost() + '/thread-' + infoObject.pageId + '.htm#' + infoObject.quoteId + '">' + infoObject.replyInfo + '</a></div><textarea class="batch-reply-textarea" placeholder="留空不回复"></textarea>', false, "width:240px;border: 2px solid gray;border-style:dashed;", "background-color: white !important;")}
@@ -1590,16 +1590,16 @@
                 `
 			return jqueryObject ? $(html) : html
 		},
-		getHost: function() {
+		getHost: function () {
 			return window.location.protocol + "//" + window.location.host
 		},
-		fetchHtml: function(webPath, callback, jqueryObject = false) {
+		fetchHtml: function (webPath, callback, jqueryObject = false) {
 			$.ajax({
 				type: "get",
 				url: Utils.getHost() + webPath,
 				dataType: "html",
 				async: true,
-				success: function(html) {
+				success: function (html) {
 					callback && callback(jqueryObject ? $(html) : html)
 				}
 			});
@@ -1607,7 +1607,7 @@
 	}
 
 
-	$(document).ready(function() {
+	$(document).ready(function () {
 		Utils.init()
 	});
 
