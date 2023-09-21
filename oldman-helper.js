@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         老男人助手
 // @namespace    http://tampermonkey.net/
-// @version      0.8.10
+// @version      0.8.11
 // @description  适用于老男人游戏论坛:https://bbs.oldmantvg.net/ 的小工具
 // @author       rock128
 // @match        https://bbs.oldmanemu.net/*
@@ -883,7 +883,7 @@
 			// 和所属对象属性名保持一致
 			id: "replyFixed",
 			// 显示在界面上的标题
-			title: "回复框停靠",
+			title: "回复框吸附",
 			// 配置变化时是否需要重新加载页面
 			needReload: false,
 			// 所有用到的配置全部写在这里，config对象会持久化
@@ -904,17 +904,44 @@
 					if(!replyInput){
 						return
 					}
-					if(!replyInput.hasClass("fixed-reply")){
+					function effect () {
 						replyInput.addClass("fixed-reply")
 						let width = replyInput.parent().parent().outerWidth()
 						replyInput.css("width",(width+20)+"px")
-					}					
+						$("#advanced_reply").parent().prepend('<a class="icon-mail-forward text-muted" href="javascript:void(0)" id="cancel-reply-fixed"> 取消吸附</a>')
+						$("#cancel-reply-fixed").click(function(){
+							cancel()
+						})
+						$(".fixed-reply").find(".mr-3").hide()
+						$(".fixed-reply").find(".d-flex.justify-content-between.small.text-muted").css("cssText","display:none !important")
+						let o = $($($(".fixed-reply").children()[1]).children()[1])
+						o.css("display","flex")
+						o.css("justify-content","center")
+						o.css("align-items","center")						
+						$("#quick_reply_form").css("width","98%")
+					}
+					function cancel () {						
+						$("#cancel-reply-fixed").remove()
+						$(".fixed-reply").find(".mr-3").show()
+						$(".fixed-reply").find(".d-flex.justify-content-between.small.text-muted").show()
+						let o = $($($(".fixed-reply").children()[1]).children()[1])
+						o.css("display","")
+						o.css("justify-content","")
+						o.css("align-items","")						
+						$("#quick_reply_form").css("width","")
+						replyInput.removeClass("fixed-reply")
+						replyInput.css("width","")
+					}
+
+					if(!replyInput.hasClass("fixed-reply")){
+						effect()
+					}
 				})
 				$("body").addClass("replyFixed")
 			},
 			// 功能配置的html代码
 			contentHtml: function() {
-				return Utils.createMsgDiv("<h3>功能打开后，当在帖子详情页面里，回复框获得焦点后，回复框会固定在屏幕底部</h3>")
+				return Utils.createMsgDiv("<h3>功能打开后，当在帖子详情页面里，回复框获得焦点后，回复框会吸附在屏幕底部</h3>")
 			}
 		}
 	}
