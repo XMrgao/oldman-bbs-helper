@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         老男人助手
 // @namespace    http://tampermonkey.net/
-// @version      0.8.11
+// @version      0.8.12
 // @description  适用于老男人游戏论坛:https://bbs.oldmantvg.net/ 的小工具
 // @author       rock128
 // @match        https://bbs.oldmanemu.net/*
@@ -942,6 +942,99 @@
 			// 功能配置的html代码
 			contentHtml: function () {
 				return Utils.createMsgDiv("<h3>功能打开后，当在帖子详情页面里，回复框获得焦点后，回复框会吸附在屏幕底部</h3>")
+			}
+		},
+		InfiniteScrolling: {
+			// 和所属对象属性名保持一致
+			id: "InfiniteScrolling",
+			// 显示在界面上的标题
+			title: "瀑布流评论区",
+			// 配置变化时是否需要重新加载页面
+			needReload: false,
+			// 所有用到的配置全部写在这里，config对象会持久化
+			// 除 enable 属性外，其他属性要在 configKeyElementMaps 中定义一个同名属性来映射页面元素
+			config: {
+				enable: false
+			},
+			// 该功能用到的 config 属性名和 元素class/id的映射
+			configKeyElementMaps: {},
+			// 功能生效的前提条件检查
+			matchCondition: function () {
+				return Utils.isMatchPageCategory("thread") && !Utils.hasElement(".InfiniteScrolling")
+			},
+			// 功能生效的逻辑代码
+			doAction: function () {
+				// 分页区域
+				$(".pagination.my-4.justify-content-center.flex-wrap").hide()
+				let last = $(".pagination.my-4.justify-content-center.flex-wrap").eq(0).children().last()
+				if(last.text() == "▶"){
+					last = last.prev()
+				}
+				if(last.text() == ""){
+					return
+				}
+				// 评论区域
+				let replyZone = $(".card.card-postlist").find(".list-unstyled.postlist").eq(0).children()
+				// 没有回复时，length是2
+				if(!replyZone || replyZone.length <= 2){
+					return;
+				}
+				// 分页数
+				let pageCount = parseInt(last.text());
+				let lastReplyElement = null;
+				let currentLoadPage = 1;
+				// 获取评论区最后一条评论
+				let getLastReplyElement = function(){
+					return $(".card.card-postlist").find(".list-unstyled.postlist").eq(0).children().eq(-3)[0]
+				}
+				// 监听评论区最后一条评论
+				let observeLastReplyElement = function(){
+					if(lastReplyElement){
+						observer.unobserve(lastReplyElement);
+					}
+					if(currentLoadPage>=pageCount){
+						return
+					}
+					lastReplyElement = getLastReplyElement()
+					if(!lastReplyElement){
+						return
+					}
+					observer.observe(lastReplyElement);
+				}
+				let nextPageUrl = function() {
+					currentLoadPage++
+					let href = window.location.pathname
+					href = href.replace(".htm","")
+					href = href + "-"+currentLoadPage+".htm"					
+					return href
+				}
+				const observer = new IntersectionObserver(entries => {
+					entries.forEach(entry => {
+						if (entry.isIntersecting) {
+							// 这时滚动到本页最后一条回复位置了，加载下一页数据
+							Utils.fetchHtml(nextPageUrl(),function(object){
+								let data = object.find(".card.card-postlist").find(".list-unstyled.postlist").eq(0).children()
+								if(data && data.length >2){
+									let index = 0
+									let endIndex = data.length - 2
+									while(index < endIndex){
+										data.eq(index).find(".floor.mr-0").text((currentLoadPage-1)*20+index+1)
+										let last = getLastReplyElement()
+										last.after(data[index])
+										index++
+									}
+								}
+								observeLastReplyElement()
+							},true)
+						}
+					});
+				});
+				observeLastReplyElement()
+				$("body").addClass("InfiniteScrolling")
+			},
+			// 功能配置的html代码
+			contentHtml: function () {
+				return Utils.createMsgDiv("<h6>在帖子详情页面，去掉了页码显示。如果有很多页，鼠标滚动到最后一条评论位置时，自动加载下一页评论，拼接在后面。<br><font style='color:red'>假设点进帖子时，评论有3页，那么最多自动加载页数会固定为3,在阅读评论期间且没刷新过页面时，评论已经到4页，该功能不会自动加载第4页的内容，此时需要手动刷新页面来重置自动加载页数。这么做是防止在最后一页时，滚动页面，导致反复触发请求服务器新数据，减轻服务器压力</font></h6>")
 			}
 		}
 	}
