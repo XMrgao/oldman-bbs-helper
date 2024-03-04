@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         老男人助手
 // @namespace    http://tampermonkey.net/
-// @version      0.8.12
+// @version      0.8.13
 // @description  适用于老男人游戏论坛:https://bbs.oldmantvg.net/ 的小工具
 // @author       rock128
 // @match        https://bbs.oldmanemu.net/*
@@ -241,7 +241,7 @@
 			// 和所属对象属性名保持一致
 			id: "autoReply",
 			// 显示在界面上的标题
-			title: "自动回复隐藏帖子",
+			title: "一键回复隐藏帖子",
 			// 配置变化时是否需要重新加载页面
 			needReload: false,
 			// 所有用到的配置全部写在这里，config对象会持久化
@@ -262,27 +262,37 @@
 			},
 			// 功能生效的前提条件检查
 			matchCondition: function () {
-				return Utils.isMatchPageCategory("thread")
+				return Utils.isMatchPageCategory("thread") && !Utils.hasElement("#oneKeyReplyButton")
 			},
 			// 功能生效的逻辑代码
 			doAction: function () {
-				let issueTime = $(".username").eq(1).next().text().trim()
-				let isRecently = /^[0-9]+(秒|分钟|小时|天)前$/.test(issueTime)
-				if (isRecently && issueTime.indexOf("天前") != -1) {
-					let day = issueTime.replace("天前", "")
-					isRecently = parseInt(day) < 7
+				let msgTemplates = this.config.msgTemplates
+				if (msgTemplates.length == 0) {
+					return
 				}
-				if (isRecently && $(".alert-warning") && $(".alert-warning").text().indexOf("此处隐藏内容请回复后再查看") != -1) {
-					var msg = this.config.msgTemplates[Math.floor(Math.random() * this.config.msgTemplates.length)];
-					$(".message .form-control").val(msg)
+				if (!$(".alert-warning") || $(".alert-warning").text().indexOf("此处隐藏内容请回复后再查看") == -1) {
+					return
+				}
+				let randomMsg = msgTemplates[Math.floor(Math.random() * msgTemplates.length)];
+				var button = $('<button id="oneKeyReplyButton" style="margin-left:10px;border-color: #ff8383;color: #ff8383;" class="btn btn-outline-secondary">一键回复隐藏</button>')
+				button.click(function () {
+					$(this).remove()
+					$(".message .form-control").val(randomMsg)
 					$("#quick_reply_form").submit()
+				})
+				$(".plugin.d-flex.justify-content-center.mt-3").append(button)
+			},
+			onClose: function () {
+				let button = $("#oneKeyReplyButton")
+				if (button.length > 0) {
+					button.eq(0).remove()
 				}
 			},
 			// 功能配置的html代码
 			contentHtml: function () {
 				let html = `
                         <div>
-                            ${Utils.createDivWithTitle("自动回复消息模板", '<font style="color:red;"><b>为防止过于久远的帖子被自动回复顶贴，只有发布时间是7天以内的帖子才会自动回复</b><font></br>    <textarea placeholder="页面有隐藏内容自动回复的消息，一行一条，将随机选一条回复" class="setting-textarea" id="auto-reply">' + this.config.msgTemplates.join("\n") + '</textarea>')}                            
+                            ${Utils.createDivWithTitle("一键回复消息模板", '<font style="color:red;"><b>为防止过多无意义水贴和减轻服务器压力，自动回复改为手动回复，当帖子存在隐藏内容时，在点赞收藏那一排按钮中加一个一键回复按钮，点击后随机选一条预设回复。<h5>如果帖子没有隐藏，或者没有在下面填写模板回复，按钮不会出现</h5></b><font></br>    <textarea placeholder="页面有隐藏内容时一键回复的消息，一行一条，将随机选一条回复" class="setting-textarea" id="auto-reply">' + this.config.msgTemplates.join("\n") + '</textarea>')}                            
                         </div>
                     `
 				return html
@@ -900,42 +910,7 @@
 			// 功能生效的逻辑代码
 			doAction: function () {
 				$("#message").focus(function () {
-					let replyInput = $(".post.newpost.media")
-					if (!replyInput) {
-						return
-					}
-					function effect() {
-						replyInput.addClass("fixed-reply")
-						let width = replyInput.parent().parent().outerWidth()
-						replyInput.css("width", (width + 20) + "px")
-						$("#advanced_reply").parent().prepend('<a class="icon-mail-forward text-muted" href="javascript:void(0)" id="cancel-reply-fixed"> 取消吸附</a>')
-						$("#cancel-reply-fixed").click(function () {
-							cancel()
-						})
-						$(".fixed-reply").find(".mr-3").hide()
-						$(".fixed-reply").find(".d-flex.justify-content-between.small.text-muted").css("cssText", "display:none !important")
-						let o = $($($(".fixed-reply").children()[1]).children()[1])
-						o.css("display", "flex")
-						o.css("justify-content", "center")
-						o.css("align-items", "center")
-						$("#quick_reply_form").css("width", "98%")
-					}
-					function cancel() {
-						$("#cancel-reply-fixed").remove()
-						$(".fixed-reply").find(".mr-3").show()
-						$(".fixed-reply").find(".d-flex.justify-content-between.small.text-muted").show()
-						let o = $($($(".fixed-reply").children()[1]).children()[1])
-						o.css("display", "")
-						o.css("justify-content", "")
-						o.css("align-items", "")
-						$("#quick_reply_form").css("width", "")
-						replyInput.removeClass("fixed-reply")
-						replyInput.css("width", "")
-					}
-
-					if (!replyInput.hasClass("fixed-reply")) {
-						effect()
-					}
+					Utils.setFixedReplyState(true)
 				})
 				$("body").addClass("replyFixed")
 			},
@@ -967,16 +942,16 @@
 				// 分页区域
 				$(".pagination.my-4.justify-content-center.flex-wrap").hide()
 				let last = $(".pagination.my-4.justify-content-center.flex-wrap").eq(0).children().last()
-				if(last.text() == "▶"){
+				if (last.text() == "▶") {
 					last = last.prev()
 				}
-				if(last.text() == ""){
+				if (last.text() == "") {
 					return
 				}
 				// 评论区域
 				let replyZone = $(".card.card-postlist").find(".list-unstyled.postlist").eq(0).children()
 				// 没有回复时，length是2
-				if(!replyZone || replyZone.length <= 2){
+				if (!replyZone || replyZone.length <= 2) {
 					return;
 				}
 				// 分页数
@@ -984,52 +959,56 @@
 				let lastReplyElement = null;
 				let currentLoadPage = 1;
 				// 获取评论区最后一条评论
-				let getLastReplyElement = function(){
+				let getLastReplyElement = function () {
 					return $(".card.card-postlist").find(".list-unstyled.postlist").eq(0).children().eq(-3)[0]
 				}
 				// 监听评论区最后一条评论
-				let observeLastReplyElement = function(){
-					if(lastReplyElement){
+				let observeLastReplyElement = function () {
+					if (lastReplyElement) {
 						observer.unobserve(lastReplyElement);
 					}
-					if(currentLoadPage>=pageCount){
+					if (currentLoadPage >= pageCount) {
 						return
 					}
 					lastReplyElement = getLastReplyElement()
-					if(!lastReplyElement){
+					if (!lastReplyElement) {
 						return
 					}
 					observer.observe(lastReplyElement);
 				}
-				let nextPageUrl = function() {
+				let nextPageUrl = function () {
 					currentLoadPage++
 					let href = window.location.pathname
-					href = href.replace(".htm","")
-					href = href + "-"+currentLoadPage+".htm"					
+					href = href.replace(".htm", "")
+					href = href + "-" + currentLoadPage + ".htm"
 					return href
 				}
 				const observer = new IntersectionObserver(entries => {
 					entries.forEach(entry => {
 						if (entry.isIntersecting) {
 							// 这时滚动到本页最后一条回复位置了，加载下一页数据
-							Utils.fetchHtml(nextPageUrl(),function(object){
+							Utils.fetchHtml(nextPageUrl(), function (object) {
 								let data = object.find(".card.card-postlist").find(".list-unstyled.postlist").eq(0).children()
-								if(data && data.length >2){
+								if (data && data.length > 2) {
 									let index = 0
 									let endIndex = data.length - 2
-									while(index < endIndex){
-										data.eq(index).find(".floor.mr-0").text((currentLoadPage-1)*20+index+1)
+									while (index < endIndex) {
+										data.eq(index).find(".floor.mr-0").text((currentLoadPage - 1) * 20 + index + 1)
 										let last = getLastReplyElement()
 										last.after(data[index])
 										index++
 									}
 								}
 								observeLastReplyElement()
-							},true)
+							}, true)
 						}
 					});
 				});
 				observeLastReplyElement()
+
+				// 打开回复框吸附
+				Utils.setFixedReplyState(true)
+
 				$("body").addClass("InfiniteScrolling")
 			},
 			// 功能配置的html代码
@@ -1549,9 +1528,13 @@
 		},
 		applyFunction: function (functionName = "") {
 			let applyFn = function (fn) {
-				if (fn && fn.config && fn.config.enable && fn.doAction) {
-					if (!fn.matchCondition || (fn.matchCondition && fn.matchCondition())) {
-						fn.doAction();
+				if (fn && fn.config) {
+					if (fn.config.enable) {
+						if (!fn.matchCondition || (fn.matchCondition && fn.matchCondition())) {
+							fn.doAction && fn.doAction();
+						}
+					} else {
+						fn.onClose && fn.onClose();
 					}
 				}
 			}
@@ -1696,6 +1679,49 @@
 					callback && callback(jqueryObject ? $(html) : html)
 				}
 			});
+		},
+		setFixedReplyState: function (state) {
+			let replyInput = $(".post.newpost.media")
+			if (!replyInput) {
+				return
+			}
+			function effect() {
+				replyInput.addClass("fixed-reply")
+				let width = replyInput.parent().parent().outerWidth()
+				replyInput.css("width", (width + 20) + "px")
+				$("#advanced_reply").parent().prepend('<a class="icon-mail-forward text-muted" href="javascript:void(0)" id="cancel-reply-fixed"> 取消吸附</a>')
+				$("#cancel-reply-fixed").click(function () {
+					cancel()
+				})
+				$(".fixed-reply").find(".mr-3").hide()
+				$(".fixed-reply").find(".d-flex.justify-content-between.small.text-muted").css("cssText", "display:none !important")
+				let o = $($($(".fixed-reply").children()[1]).children()[1])
+				o.css("display", "flex")
+				o.css("justify-content", "center")
+				o.css("align-items", "center")
+				$("#quick_reply_form").css("width", "98%")
+			}
+			function cancel() {
+				$("#cancel-reply-fixed").remove()
+				$(".fixed-reply").find(".mr-3").show()
+				$(".fixed-reply").find(".d-flex.justify-content-between.small.text-muted").show()
+				let o = $($($(".fixed-reply").children()[1]).children()[1])
+				o.css("display", "")
+				o.css("justify-content", "")
+				o.css("align-items", "")
+				$("#quick_reply_form").css("width", "")
+				replyInput.removeClass("fixed-reply")
+				replyInput.css("width", "")
+			}
+			if (state) {
+				if (!replyInput.hasClass("fixed-reply")) {
+					effect()
+				}
+			} else {
+				if (replyInput.hasClass("fixed-reply")) {
+					cancel()
+				}
+			}
 		}
 	}
 
