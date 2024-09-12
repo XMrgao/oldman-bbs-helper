@@ -9,7 +9,7 @@
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
-// @require      https://cdn.bootcdn.net/ajax/libs/jscolor/2.4.7/jscolor.min.js
+// @require      https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/jscolor/2.4.7/jscolor.min.js
 // @require      https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/jszip/3.7.1/jszip.min.js
 // @require      https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/FileSaver.js/2.0.5/FileSaver.min.js
 // @resource css https://cdn.staticfile.org/font-awesome/4.7.0/css/font-awesome.css
