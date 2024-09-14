@@ -12,6 +12,7 @@
 // @require      https://lf6-cdn-tos.bytecdntp.com/cdn/expire-1-M/jscolor/2.4.7/jscolor.min.js
 // @require      https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/jszip/3.7.1/jszip.min.js
 // @require      https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/FileSaver.js/2.0.5/FileSaver.min.js
+// @require      https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-M/crypto-js/4.1.1/crypto-js.min.js
 // @resource css https://cdn.staticfile.org/font-awesome/4.7.0/css/font-awesome.css
 // @license      GPL-3.0 License
 // ==/UserScript==
@@ -1035,21 +1036,21 @@
 			// 该功能用到的 config 属性名和 元素class/id的映射
 			configKeyElementMaps: {
 				mode: {
-					getVal: function(){ 
+					getVal: function () {
 						return $('input[type="radio"][name="mode"]:checked').val()
 					}
 				},
 				isTW: {
-					getVal: function(){
+					getVal: function () {
 						let m = $('input[type="radio"][name="area"]:checked')
 						return m && (m.val() == "true" || m.val() == true)
 					}
 				},
-				autoModeDelay:{
-					element:"#autoModeDelay-input"
+				autoModeDelay: {
+					element: "#autoModeDelay-input"
 				},
-				autoModeTransformType:{
-					element:"#autoModeTransformType"
+				autoModeTransformType: {
+					element: "#autoModeTransformType"
 				}
 			},
 			// 功能生效的前提条件检查
@@ -1533,9 +1534,13 @@
 					if (e) {
 						let len = e.children().length
 						if (len == 2) {  // 发帖框富文本编辑器模式
-							$('div.form-control.edui-body-container').html(content)
+							let editer = $('div.form-control.edui-body-container');
+							editer.html(content);
+							editer.setCursorToEnd();
 						} else if (len == 3) {  // 发帖框源代码编辑器模式
-							e.children().eq(2).val(content)
+							let editer = e.children().eq(2);
+							editer.val(content);
+							editer.setCursorToEnd();
 						}
 					}
 				}
@@ -1552,6 +1557,7 @@
 								str: message.val(),
 								language: 'zh_TW'
 							}));
+							message.setCursorToEnd();
 						})
 						$("#advanced_reply").parent().prepend(toSimplifiedButton)
 						let toTraditionalButton = $('<a class="icon-mail-forward text-muted" href="javascript:void(0)"> 转为繁体</a>&nbsp;')
@@ -1561,6 +1567,7 @@
 								str: message.val(),
 								language: 'zh_TW'
 							}));
+							message.setCursorToEnd();
 						})
 						$("#advanced_reply").parent().prepend(toTraditionalButton)
 					}
@@ -1611,6 +1618,7 @@
 							}));
 						}
 						$(lastSelectInput).focus()
+						$(lastSelectInput).setCursorToEnd();
 					})
 					let transverterMenu = $("#transverter-menu")
 					$(transverterMenu).mouseenter(function () {
@@ -1651,6 +1659,7 @@
 						let inputValue = input.val();
 						transverterFn(inputValue, function (result) {
 							input.val(result);
+							input.setCursorToEnd();
 						})
 					});
 
@@ -1662,14 +1671,21 @@
 							if (len == 2) {  // 发帖框富文本编辑器模式
 								var targetNode = $('div.form-control.edui-body-container').get(0);
 								if (targetNode) {
+									let lastMd5Hash = null;
 									// 创建 MutationObserver 实例
 									var observer = new MutationObserver(function (mutationsList, observer) {
 										// 当目标节点发生变化时执行的回调
 										mutationsList.forEach(function (mutation) {
 											if (mutation.type === 'childList' || mutation.type === 'characterData') {
-												transverterFn(targetNode.innerHTML, function (result) {
-													targetNode.innerHTML = result
-												})
+												let str = targetNode.innerHTML.replaceAll("&nbsp;","").replaceAll("<p>","").replaceAll("</p>","").replaceAll("<br/>","").replaceAll("<br>","").trim();
+												let md5Hash = CryptoJS.MD5(str).toString();
+												if (md5Hash != lastMd5Hash) {
+													lastMd5Hash = md5Hash;
+													transverterFn(targetNode.innerHTML, function (result) {
+														targetNode.innerHTML = result
+														$(targetNode).setCursorToEnd();
+													})
+												}
 											}
 										});
 									});
@@ -1686,6 +1702,7 @@
 									let inputValue = input.val();
 									transverterFn(inputValue, function (result) {
 										input.val(result);
+										input.setCursorToEnd();
 									})
 								});
 							}
@@ -1708,23 +1725,24 @@
 							let inputValue = input.val();
 							transverterFn(inputValue, function (result) {
 								input.val(result);
+								input.setCursorToEnd();
 							})
 						})
 					}
 				}
 				$("body").addClass("cnTransverter")
 			},
-			initScript:function(){
-				$('input[type="radio"][name="mode"]').change(function() {
+			initScript: function () {
+				$('input[type="radio"][name="mode"]').change(function () {
 					var selectedValue = $(this).val();
-					if(selectedValue == 1){
+					if (selectedValue == 1) {
 						$('#autoModeArea').show()
-					}else{
+					} else {
 						$('#autoModeArea').hide()
 					}
 				});
 
-				if($('input[type="radio"][name="mode"]:checked').val() ==1){
+				if ($('input[type="radio"][name="mode"]:checked').val() == 1) {
 					$('#autoModeArea').show()
 				}
 			},
@@ -1733,16 +1751,16 @@
 				let config = this.config;
 				return Utils.createMsgDiv(`
 				<div>
-					转换模式: <label> <input type="radio" name="mode" value="0" ${config.mode == 0 ? 'checked':''}> 手动 </label> <label> <input type="radio" name="mode" value="1" ${config.mode == 1 ? 'checked':''}> 自动 </label>
+					转换模式: <label> <input type="radio" name="mode" value="0" ${config.mode == 0 ? 'checked' : ''}> 手动 </label> <label> <input type="radio" name="mode" value="1" ${config.mode == 1 ? 'checked' : ''}> 自动 </label>
 					</br>
-					处于台湾地区: <label> <input type="radio" name="area" value="true" ${config.isTW ? 'checked':''}> 是 </label> <label> <input type="radio" name="area" value="false" ${config.isTW ? '':'checked'}> 否 </label>
+					处于台湾地区: <label> <input type="radio" name="area" value="true" ${config.isTW ? 'checked' : ''}> 是 </label> <label> <input type="radio" name="area" value="false" ${config.isTW ? '' : 'checked'}> 否 </label>
 					</br>
 					<div id="autoModeArea" style="display:none;">
 						自动转换延迟: <input style="width:30px;" type="text" id="autoModeDelay-input" value="${config.autoModeDelay}" /> 毫秒 </br>
 						自动转换类型:  
 						<select id="autoModeTransformType">
-							<option value="1" ${config.autoModeTransformType == 1 ? 'selected':''}>简体转繁体</option>
-							<option value="0" ${config.autoModeTransformType == 0 ? 'selected':''}>繁体转简体</option>
+							<option value="1" ${config.autoModeTransformType == 1 ? 'selected' : ''}>简体转繁体</option>
+							<option value="0" ${config.autoModeTransformType == 0 ? 'selected' : ''}>繁体转简体</option>
 						</select>
 					</div>
 				</div>
@@ -2472,6 +2490,16 @@
 		}
 	}
 
+	$.fn.setCursorToEnd = function () {
+		var element = this[0]; // 获取 DOM 元素
+		var range = document.createRange();
+		var selection = window.getSelection();
+		range.selectNodeContents(element);  // 选择整个元素的内容
+		range.collapse(false);  // 将光标设置到末尾
+		selection.removeAllRanges();  // 清空所有选择
+		selection.addRange(range);  // 添加新的选择区域
+		return this;
+	};
 
 	$(document).ready(function () {
 		Utils.init()
