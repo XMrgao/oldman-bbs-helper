@@ -319,7 +319,18 @@
 			},
 			// 功能生效的逻辑代码
 			doAction: function () {
+				$("input,textarea").focus(function() {
+					window.editing = true;
+				});
+
+				$("input,textarea").blur(function() {
+					window.editing = false;
+				});
+
 				$(document).keydown(function (event) {
+					if(window.editing){
+						return;
+					}
 					if (event.keyCode == 37) {
 						let preA = $(".page-link:contains('◀')")
 						if (preA && preA.length > 0) {
@@ -999,6 +1010,8 @@
 										last.after(data[index])
 										index++
 									}
+									// 加载了新内容，应用下高亮楼主逻辑
+									Utils.applyFunction("highlightAuthor")
 								}
 								observeLastReplyElement()
 							}, true)
